@@ -420,6 +420,45 @@ def cost_to_alpha_ratio(gross_equity: pd.Series, net_equity: pd.Series) -> float
     return float(gross_alpha / cost_absorbed)
 
 
+def sharpe_ci(
+    returns: pd.Series,
+    n_bootstrap: int = 1000,
+    confidence: float = 0.95,
+    seed: int = 42,
+) -> tuple:
+    """Bootstrap percentile confidence interval for the annualised Sharpe ratio.
+
+    Blind spot covered: the standard error of a Sharpe estimate is large for
+    finite samples (~1000 bars). A point-estimate Sharpe of 0.5 computed from
+    1000 daily returns has a 95% CI of roughly [0.0, 1.0], making it
+    statistically indistinguishable from zero. This function makes that
+    uncertainty explicit so rankings can distinguish strategies with real edge
+    (CI excludes zero) from those consistent with noise (CI straddles zero).
+
+    Uses the percentile bootstrap (not studentized) — simpler and sufficient
+    for ~1000-bar datasets, though it slightly undercovers for skewed
+    distributions. Fixed seed ensures byte-for-byte reproducible CIs.
+
+    Args:
+        returns: Daily return series (e.g. equity.pct_change().dropna()).
+        n_bootstrap: Number of bootstrap resamples.
+        confidence: Desired confidence level (e.g. 0.95 for 95% CI).
+        seed: RNG seed for reproducibility. Uses numpy.random.default_rng
+            (modern generator — do not substitute legacy np.random.seed).
+
+    Returns:
+        (lower, point, upper) — all annualised Sharpe values as floats.
+    """
+    rng = np.random.default_rng(seed)
+    n = len(returns)
+    samples = rng.choice(returns.values, size=(n_bootstrap, n), replace=True)
+    boot_sharpes = (samples.mean(axis=1) / samples.std(axis=1, ddof=1)) * np.sqrt(ANNUALIZE)
+    lo = float(np.percentile(boot_sharpes, (1 - confidence) / 2 * 100))
+    hi = float(np.percentile(boot_sharpes, (1 + confidence) / 2 * 100))
+    point = float((returns.mean() / returns.std(ddof=1)) * np.sqrt(ANNUALIZE))
+    return lo, point, hi
+
+
 def compute_all(
     equity: pd.Series,
     positions: pd.Series,
