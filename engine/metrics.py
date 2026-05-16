@@ -152,9 +152,11 @@ def turnover(positions: pd.Series) -> float:
         positions: Series of position values (e.g. -1, 0, or 1).
 
     Returns:
-        Mean absolute daily position change.
+        Mean absolute daily position change, seeded from a flat (0) prior so
+        the opening entry trade is counted (cost is already deducted in equity).
     """
-    return float(positions.diff().abs().dropna().mean())
+    prev = positions.shift(1).fillna(0)
+    return float((positions - prev).abs().mean())
 
 
 def hit_rate(equity: pd.Series) -> float:
@@ -206,6 +208,20 @@ def exposure(positions: pd.Series) -> float:
         Exposure fraction (0.0 to 1.0).
     """
     return float((positions != 0).mean())
+
+
+def walk_forward_consistency(oos_sharpes: list) -> float:
+    """Fraction of OOS walk-forward windows with positive Sharpe ratio.
+
+    Args:
+        oos_sharpes: List of OOS Sharpe ratios, one per fold.
+
+    Returns:
+        Fraction in [0.0, 1.0]. Returns 0.0 for empty input.
+    """
+    if not oos_sharpes:
+        return 0.0
+    return float(np.mean([s > 0 for s in oos_sharpes]))
 
 
 def compute_all(

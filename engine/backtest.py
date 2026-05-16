@@ -1,11 +1,16 @@
 """Backtest engine: runs a strategy function against OHLCV price data.
 
+Fill model: a signal computed from data up to and including close[t] is executed
+at open[t+1]. The strategy captures the open[t+1]-to-close[t+1] intraday return,
+not the overnight gap from close[t] to open[t+1].
+
 Usage (module entrypoint):
     python -m engine.backtest
 
 Usage (as library):
-    from engine.backtest import run
+    from engine.backtest import run, walk_forward_backtest
     metrics = run(my_strategy_fn, prices_df, config)
+    oos = walk_forward_backtest(MyStrategyClass, params, prices_df)
 """
 
 import sys
@@ -88,9 +93,8 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
           raises ``LookAheadError`` if the strategy tries to access bar t+1 or beyond.
 
     Return model:
-        Close-to-close returns are used (standard academic approximation). The
-        slippage term partially compensates for the actual open[t+1] fill price.
-        equity[t+1] = equity[t] × (1 + position × bar_return − trading_cost)
+        Open[t+1]-to-close[t+1] returns capture the intraday move from the fill price.
+        equity[t+1] = equity[t] × (1 + position × (close[t+1]−open[t+1])/open[t+1] − cost)
 
     Cost model:
         trading_cost = |Δposition| × (commission_frac + slippage_frac)
@@ -133,6 +137,7 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
 
     n = len(prices_df)
     closes = prices_df["close"].values.astype(float)
+    opens = prices_df["open"].values.astype(float)
 
     equity = np.empty(n, dtype=float)
     equity[0] = initial_capital
@@ -151,7 +156,7 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
         else:
             target = 0
 
-        bar_return = (closes[t + 1] - closes[t]) / closes[t]
+        bar_return = (closes[t + 1] - opens[t + 1]) / opens[t + 1]
 
         if target != prev_pos:
             cost = abs(target - prev_pos) * (commission_frac + slippage_frac)
@@ -168,6 +173,79 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
     positions_series = pd.Series(pos_arr, index=prices_df.index)
 
     return _metrics.compute_all(equity_series, positions_series, risk_free_rate)
+
+
+def walk_forward_backtest(
+    strategy_cls,
+    params_default: dict,
+    prices_df: pd.DataFrame,
+    n_splits: int = 5,
+    train_frac: float = 0.7,
+    config: dict = None,
+) -> dict:
+    """Honest OOS evaluation: fixed params across all folds, no per-fold re-fitting.
+
+    Partitions prices_df into n_splits anchored (expanding-train) windows and
+    evaluates strategy_cls(**params_default) on each held-out test slice.
+
+    Why no re-fitting per fold: params_default are the author's prior, not values
+    derived from the data in each window. Re-fitting per fold would conflate OOS
+    evaluation with in-sample optimisation — a strategy that needs re-tuning every
+    sub-period does not have a robust edge; it is curve-fitting each sub-period.
+
+    Args:
+        strategy_cls: Callable returning a strategy callable when invoked with
+            **params_default (e.g. a class with __call__, or a factory function).
+        params_default: Fixed parameter dict used unchanged on every fold.
+        prices_df: Full price history with DatetimeIndex and OHLCV columns.
+        n_splits: Number of OOS folds.
+        train_frac: Upper bound on the training window as a fraction of the series.
+        config: Optional backtest config dict (commission_bps, slippage_bps, etc.).
+
+    Returns:
+        Dict with keys:
+            ``oos_sharpe_mean``: mean Sharpe across OOS folds.
+            ``oos_sharpe_std``: std of Sharpe across OOS folds.
+            ``oos_cagr_mean``: mean CAGR across OOS folds.
+            ``oos_max_drawdown_mean``: mean max drawdown across OOS folds.
+            ``oos_consistency``: fraction of OOS folds with positive Sharpe.
+    """
+    n = len(prices_df)
+    split_size = n // (n_splits + 1)
+    fold_results = []
+
+    for i in range(1, n_splits + 1):
+        train_end = int(n * train_frac * (i / n_splits))
+        test_start = train_end
+        test_end = test_start + split_size
+        if test_end > n:
+            break
+        oos_prices = prices_df.iloc[test_start:test_end]
+        if len(oos_prices) < 2:
+            continue
+        strategy = strategy_cls(**params_default)
+        fold_results.append(run(strategy, oos_prices, config))
+
+    if not fold_results:
+        return {
+            "oos_sharpe_mean": 0.0,
+            "oos_sharpe_std": 0.0,
+            "oos_cagr_mean": 0.0,
+            "oos_max_drawdown_mean": 0.0,
+            "oos_consistency": 0.0,
+        }
+
+    sharpes = [m["sharpe"] for m in fold_results]
+    cagrs = [m["cagr"] for m in fold_results]
+    drawdowns = [m["max_drawdown"] for m in fold_results]
+
+    return {
+        "oos_sharpe_mean": float(np.mean(sharpes)),
+        "oos_sharpe_std": float(np.std(sharpes)),
+        "oos_cagr_mean": float(np.mean(cagrs)),
+        "oos_max_drawdown_mean": float(np.mean(drawdowns)),
+        "oos_consistency": _metrics.walk_forward_consistency(sharpes),
+    }
 
 
 if __name__ == "__main__":
