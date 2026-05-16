@@ -1,0 +1,34 @@
+{
+  "trend_gbm": {
+    "mean_sharpe": 0.397916,
+    "std_sharpe": 0.248834,
+    "min_sharpe": -0.364186,
+    "max_sharpe": 0.787161,
+    "n_trials": 125,
+    "sensitivity_score": 0.625343
+  },
+  "mean_rev_ou": {
+    "mean_sharpe": 0.347729,
+    "std_sharpe": 0.223327,
+    "min_sharpe": -0.39764,
+    "max_sharpe": 0.844086,
+    "n_trials": 125,
+    "sensitivity_score": 0.642243
+  },
+  "regime_switch": {
+    "mean_sharpe": 0.592427,
+    "std_sharpe": 0.273335,
+    "min_sharpe": 0.138847,
+    "max_sharpe": 1.241108,
+    "n_trials": 125,
+    "sensitivity_score": 0.461381
+  },
+  "fat_tail": {
+    "mean_sharpe": 0.37335,
+    "std_sharpe": 0.132683,
+    "min_sharpe": 0.12377,
+    "max_sharpe": 0.657876,
+    "n_trials": 125,
+    "sensitivity_score": 0.355385
+  }
+}

@@ -52,5 +52,14 @@
     "technique": "backtest / calendar effect / institutional flows",
     "path": "pieces/05-turn-of-month",
     "thumbnail": "pieces/05-turn-of-month/thumbnail.svg"
+  },
+  {
+    "id": "06-bollinger-mean-reversion",
+    "title": "Bollinger Band Mean-Reversion",
+    "tagline": "A z-score from a rolling mean — the same overreaction thesis as RSI-2 but via a volatility-normalised distributional signal.",
+    "year": 2026,
+    "technique": "backtest / mean reversion / Bollinger Bands",
+    "path": "pieces/06-bollinger-mean-reversion",
+    "thumbnail": "pieces/06-bollinger-mean-reversion/thumbnail.svg"
   }
 ]
