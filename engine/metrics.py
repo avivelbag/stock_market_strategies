@@ -4,10 +4,15 @@ All functions operate on a pd.Series equity curve or auxiliary position series
 and return a scalar. Keep all math here — backtest.py calls these; strategies never do.
 """
 
+import math
+
 import numpy as np
 import pandas as pd
+from scipy import stats as _scipy_stats
+from scipy.stats import norm as _norm
 
 ANNUALIZE = 252  # trading days per year
+_EULER_GAMMA = 0.5772156649015329  # Euler-Mascheroni constant used in DSR Emax formula
 
 
 def cagr(equity: pd.Series) -> float:
@@ -222,6 +227,100 @@ def walk_forward_consistency(oos_sharpes: list) -> float:
     if not oos_sharpes:
         return 0.0
     return float(np.mean([s > 0 for s in oos_sharpes]))
+
+
+def sharpe_distribution_stats(equity: pd.Series) -> tuple:
+    """Return (skewness, kurtosis) of the daily return distribution.
+
+    These values are required inputs for deflated_sharpe(). The DSR formula
+    (Bailey & López de Prado 2014) applies a Cornish-Fisher correction for
+    non-normality: skewed or fat-tailed returns inflate the apparent Sharpe ratio,
+    and these moments are used to deflate it back to a calibrated t-statistic.
+
+    The kurtosis returned is Pearson's kurtosis (normal distribution = 3.0), not
+    excess kurtosis (Fisher's, normal = 0.0). This matches the convention in the
+    Bailey & López de Prado formula where the denominator term is (kurtosis - 1)/4,
+    which equals 0.5 for a normal distribution.
+
+    Args:
+        equity: Portfolio value series.
+
+    Returns:
+        (skewness, kurtosis) — both floats. Returns (0.0, 3.0) for series with
+        fewer than 4 return observations (normal-distribution defaults).
+    """
+    returns = equity.pct_change().dropna()
+    if len(returns) < 4:
+        return 0.0, 3.0
+    skewness = float(_scipy_stats.skew(returns))
+    kurtosis = float(_scipy_stats.kurtosis(returns, fisher=False))
+    return skewness, kurtosis
+
+
+def deflated_sharpe(
+    equity: pd.Series,
+    n_trials: int,
+    skewness: float,
+    kurtosis: float,
+) -> float:
+    """Deflated Sharpe Ratio (Bailey & López de Prado 2014).
+
+    The standard Sharpe ratio is silent on how many parameter combinations or
+    strategies were evaluated before selecting the winner. A strategy that appears
+    to have a positive Sharpe may have been cherry-picked from hundreds of trials,
+    making it indistinguishable from luck. The DSR closes this blind spot by
+    computing the probability that the observed Sharpe exceeds zero after applying
+    a family-wise correction for multiple testing, non-normality, and finite sample
+    bias. Reference: Bailey, D. H. & López de Prado, M. (2014). "The Deflated Sharpe
+    Ratio: Correcting for Selection Bias, Backtest Overfitting, and Non-Normality."
+    The Journal of Portfolio Management, 40(5), 94–107.
+
+    Formula:
+        SR*  = SR_hat × √((T − 1) / (1 − γ₃·SR_hat + ((γ₄ − 1)/4)·SR_hat²))
+        Emax = (1 − γ) × √(2·ln(n_trials))   [Ledoit-Wolf approximation; 0 when n_trials=1]
+        DSR  = Φ(SR* − Emax)
+
+    where SR_hat is the per-bar (non-annualised) Sharpe, T is the number of return
+    bars, γ₃ is skewness, γ₄ is Pearson's kurtosis (normal = 3), γ is the
+    Euler-Mascheroni constant (≈ 0.5772), and Φ is the standard normal CDF.
+
+    IMPORTANT: SR_hat is computed per-bar (not annualised) so that T and SR_hat
+    are on the same timescale. This differs from the annualised Sharpe in
+    compute_all() — do not substitute annualised values here.
+
+    Args:
+        equity: Portfolio value series (must have at least 2 points).
+        n_trials: Number of strategies or parameter sets evaluated before selecting
+            this one. Use 1 for a single, prior-specified strategy (conservative
+            lower bound with no multiple-testing correction). Values > 1 apply an
+            increasing penalty via the Ledoit-Wolf expected-maximum correction.
+        skewness: Skewness of the return distribution. Obtain via
+            sharpe_distribution_stats(equity)[0].
+        kurtosis: Pearson's kurtosis of the return distribution (normal = 3.0).
+            Obtain via sharpe_distribution_stats(equity)[1].
+
+    Returns:
+        DSR in [0, 1]. Values near 1 indicate the edge is likely real even after
+        multiple-testing correction; values near 0 indicate the observed Sharpe
+        is consistent with random selection from n_trials independent trials.
+    """
+    returns = equity.pct_change().dropna()
+    if len(returns) < 2:
+        return 0.0
+    T = len(returns)
+    std = returns.std()
+    if std == 0.0:
+        return 0.5
+    sr_hat = float(returns.mean() / std)
+
+    denom = 1.0 - skewness * sr_hat + ((kurtosis - 1.0) / 4.0) * sr_hat ** 2
+    if denom <= 0.0:
+        denom = 1e-10
+    sr_star = sr_hat * math.sqrt((T - 1) / denom)
+
+    emax = 0.0 if n_trials <= 1 else (1.0 - _EULER_GAMMA) * math.sqrt(2.0 * math.log(n_trials))
+
+    return float(_norm.cdf(sr_star - emax))
 
 
 def compute_all(
