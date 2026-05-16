@@ -7,6 +7,9 @@ the momentum risk premium documented by Jegadeesh & Titman (1993).
 
 
 
+DEFAULT_PARAMS = {"fast_window": 20, "slow_window": 60}
+
+
 class DualEMAMomentum:
     """Long-only momentum strategy based on dual exponential moving average crossover.
 

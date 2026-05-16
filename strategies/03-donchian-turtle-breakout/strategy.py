@@ -7,6 +7,9 @@ Trader experiment (Dennis & Eckhardt, 1983) as documented in Covel (2007).
 """
 
 
+DEFAULT_PARAMS = {"entry_window": 20, "exit_window": 10, "atr_window": 20}
+
+
 class DonchianTurtleBreakout:
     """Long-only Turtle System 1 breakout strategy based on Donchian channels.
 

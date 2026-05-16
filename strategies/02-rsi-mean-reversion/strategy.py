@@ -9,6 +9,8 @@ profits in mean-reverting regimes where momentum strategies suffer.
 
 import pandas as pd
 
+DEFAULT_PARAMS = {"rsi_period": 2, "oversold": 10.0, "overbought": 90.0}
+
 
 def _rsi(closes: pd.Series, period: int) -> float:
     """Compute the most recent RSI value using Wilder's exponential smoothing.

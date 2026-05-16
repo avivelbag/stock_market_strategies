@@ -8,6 +8,9 @@ price discovery that the strategy exploits.
 """
 
 
+DEFAULT_PARAMS = {"proximity_threshold": 0.95, "exit_threshold": 0.90}
+
+
 class FiftyTwoWeekHighProximity:
     """Long-only strategy based on proximity to the 52-week (252-bar) closing high.
 
