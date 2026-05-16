@@ -46,6 +46,22 @@ a strategy:
 python -m engine.backtest my_strategy.my_function data/trend_gbm.csv
 ```
 
+## Return convention
+
+Signals computed from data up to close[t] are filled at open[t+1]. Each bar's
+return is **open[t+1]→close[t+1]** (intraday only). Consequences:
+
+- **Overnight gap returns are not captured.** The close[t]→open[t+1] move is
+  silently dropped for every bar. Strategies with a significant edge in overnight
+  gaps (e.g., earnings holds, pre-market momentum) will appear weaker than their
+  true P&L.
+- **Multi-bar holds compound intraday legs only.** A three-day hold earns three
+  separate open→close returns, not the end-to-end close-to-close return.
+
+This is a deliberate design choice to keep the fill model simple and auditable.
+All benchmark comparisons must use this same convention; cross-convention
+comparisons are not meaningful.
+
 ## Implementing a strategy
 
 A strategy is a Python callable with this signature:
