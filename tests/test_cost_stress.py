@@ -1,13 +1,4 @@
-"""Tests for engine/cost_stress.py — transaction-cost stress sweep.
-
-Validates:
-1. cost_stress.json exists for every registered strategy.
-2. Each dataset sub-dict contains all 20 default grid cells.
-3. Top-level cost_breakeven_* fields are present.
-4. The (5, 5) cell matches metrics.json[dataset]["sharpe"] to within 0.01.
-5. compute_breakevens produces correct sentinels for degenerate cases.
-6. cost_stress_sweep is deterministic and returns 20 cells on the default grid.
-"""
+"""Tests for engine/cost_stress.py — transaction-cost stress sweep."""
 
 import json
 import math
@@ -20,10 +11,6 @@ import pytest
 ROOT = Path(__file__).parent.parent
 STRATEGIES_JSON = ROOT / "strategies.json"
 STRATEGIES_DIR = ROOT / "strategies"
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 EXPECTED_GRID_KEYS = {
     f"({c}, {s})"
@@ -51,7 +38,6 @@ def _load_metrics(strategy_name: str) -> dict:
 
 
 def _is_valid_breakeven(val) -> bool:
-    """A breakeven value is valid if it is a real number or one of the two sentinels."""
     from engine.cost_stress import ABOVE_MAX_GRID_SENTINEL, ALREADY_NEGATIVE_SENTINEL
 
     if val in (ALREADY_NEGATIVE_SENTINEL, ABOVE_MAX_GRID_SENTINEL):
@@ -59,11 +45,6 @@ def _is_valid_breakeven(val) -> bool:
     if isinstance(val, (int, float)) and not math.isnan(val):
         return True
     return False
-
-
-# ---------------------------------------------------------------------------
-# File-presence gate (acceptance criterion 1)
-# ---------------------------------------------------------------------------
 
 
 class TestCostStressJsonExists:
@@ -86,14 +67,8 @@ class TestCostStressJsonExists:
                 )
 
 
-# ---------------------------------------------------------------------------
-# Grid completeness (acceptance criterion 2)
-# ---------------------------------------------------------------------------
-
-
 class TestGridCompleteness:
     def test_all_20_grid_cells_present_per_dataset(self):
-        """Every dataset sub-dict in cost_stress.json must contain all 20 cells."""
         for entry in _load_registry():
             data = _load_cost_stress(entry["name"])
             datasets = entry.get("datasets", [])
@@ -108,7 +83,6 @@ class TestGridCompleteness:
                     )
 
     def test_grid_values_are_finite_floats(self):
-        """All 20 grid cells must be finite floats, not NaN or Inf."""
         for entry in _load_registry():
             data = _load_cost_stress(entry["name"])
             for ds in entry.get("datasets", []):
@@ -122,11 +96,6 @@ class TestGridCompleteness:
                         f"Grid cell '{key}' in dataset '{ds}' for '{entry['name']}' "
                         f"is not finite: {val}"
                     )
-
-
-# ---------------------------------------------------------------------------
-# Breakeven fields (acceptance criterion 3)
-# ---------------------------------------------------------------------------
 
 
 class TestBreakevenFields:
@@ -143,7 +112,6 @@ class TestBreakevenFields:
             )
 
     def test_top_level_breakeven_fields_are_valid(self):
-        """Breakevens must be numeric or one of the two documented sentinels."""
         for entry in _load_registry():
             data = _load_cost_stress(entry["name"])
             for field in ("cost_breakeven_commission_bps", "cost_breakeven_slippage_bps"):
@@ -154,7 +122,6 @@ class TestBreakevenFields:
                 )
 
     def test_per_dataset_breakeven_fields_present(self):
-        """Each dataset sub-dict must also have its own breakeven fields."""
         for entry in _load_registry():
             data = _load_cost_stress(entry["name"])
             for ds in entry.get("datasets", []):
@@ -172,14 +139,9 @@ class TestBreakevenFields:
                     )
 
 
-# ---------------------------------------------------------------------------
-# Regression: (5, 5) matches metrics.json (acceptance criterion 4)
-# ---------------------------------------------------------------------------
-
-
 class TestRegressionAgainstMetricsJson:
     def test_cell_5_5_matches_metrics_json_sharpe(self):
-        """cost_stress.json[(dataset)][(5, 5)] must equal metrics.json[dataset][sharpe] ±0.01."""
+        """Regression guard: cost_stress (5,5) must stay within 0.01 of metrics.json Sharpe."""
         for entry in _load_registry():
             cost_stress = _load_cost_stress(entry["name"])
             metrics = _load_metrics(entry["name"])
@@ -193,12 +155,7 @@ class TestRegressionAgainstMetricsJson:
                 )
 
 
-# ---------------------------------------------------------------------------
-# Unit tests for cost_stress_sweep function
-# ---------------------------------------------------------------------------
-
 def _make_trending_prices(n: int = 300, seed: int = 42) -> pd.DataFrame:
-    """Create a simple synthetic OHLCV DataFrame with an upward trend."""
     rng = np.random.default_rng(seed)
     dates = pd.date_range("2020-01-01", periods=n, freq="B")
     close = 100.0 * np.cumprod(1 + rng.normal(0.001, 0.01, n))
@@ -213,15 +170,11 @@ def _make_trending_prices(n: int = 300, seed: int = 42) -> pd.DataFrame:
 
 
 class _AlwaysLong:
-    """Trivial always-long stateless strategy for testing."""
-
     def __call__(self, view) -> float:
         return 1.0
 
 
 class _AlwaysFlat:
-    """Trivial always-flat strategy — no trades, no cost exposure."""
-
     def __call__(self, view) -> float:
         return 0.0
 
@@ -242,7 +195,7 @@ class TestCostStressSweepUnit:
         assert set(result.keys()) == EXPECTED_GRID_KEYS
 
     def test_higher_costs_lower_sharpe_for_active_strategy(self):
-        """For an always-long strategy, higher costs must never improve Sharpe."""
+        """Higher costs must not improve Sharpe for an always-long strategy."""
         from engine.cost_stress import cost_stress_sweep
 
         df = _make_trending_prices()
@@ -265,7 +218,6 @@ class TestCostStressSweepUnit:
         )
 
     def test_deterministic_across_runs(self):
-        """Same inputs produce identical outputs on two consecutive calls."""
         from engine.cost_stress import cost_stress_sweep
 
         df = _make_trending_prices(seed=42)
@@ -287,20 +239,14 @@ class TestCostStressSweepUnit:
         assert "(5, 5)" in result
 
 
-# ---------------------------------------------------------------------------
-# Unit tests for compute_breakevens
-# ---------------------------------------------------------------------------
-
-
 class TestComputeBreakevens:
     def test_already_negative_at_zero_cost_commission(self):
-        """All-negative sweep results → ALREADY_NEGATIVE_SENTINEL for both axes."""
+        """All-negative sweep → ALREADY_NEGATIVE_SENTINEL for both axes."""
         from engine.cost_stress import (
             ALREADY_NEGATIVE_SENTINEL,
             compute_breakevens,
         )
 
-        # Sharpe is negative at every grid cell
         sweep = {
             f"({c}, {s})": -0.5
             for c in [0, 2, 5, 10, 20]
@@ -311,7 +257,7 @@ class TestComputeBreakevens:
         assert b_slip == ALREADY_NEGATIVE_SENTINEL
 
     def test_above_max_grid_when_always_positive(self):
-        """All-positive sweep results → ABOVE_MAX_GRID_SENTINEL for both axes."""
+        """All-positive sweep → ABOVE_MAX_GRID_SENTINEL for both axes."""
         from engine.cost_stress import ABOVE_MAX_GRID_SENTINEL, compute_breakevens
 
         sweep = {
@@ -328,7 +274,6 @@ class TestComputeBreakevens:
         from engine.cost_stress import compute_breakevens
 
         sweep = {f"({c}, {s})": 0.0 for c in [0, 2, 5, 10, 20] for s in [0, 2, 5, 10]}
-        # Positive at low commission, negative at 10+ (slippage=5 row)
         for c in [0, 2, 5]:
             sweep[f"({c}, 5)"] = 0.3
         for c in [10, 20]:
@@ -349,14 +294,8 @@ class TestComputeBreakevens:
         assert b_slip == 5
 
 
-# ---------------------------------------------------------------------------
-# Edge-case: large input and missing-file failure
-# ---------------------------------------------------------------------------
-
-
 class TestEdgeCases:
     def test_sweep_handles_large_dataset(self):
-        """Sweep must complete without error on a 2000-bar dataset."""
         from engine.cost_stress import cost_stress_sweep
 
         df = _make_trending_prices(n=2000)
@@ -364,7 +303,6 @@ class TestEdgeCases:
         assert len(result) == 20
 
     def test_missing_cost_stress_json_is_detected_by_structure_test(self, tmp_path):
-        """Verify that a strategy dir without cost_stress.json causes a file-not-found."""
         no_stress = tmp_path / "cost_stress.json"
         assert not no_stress.exists()
 

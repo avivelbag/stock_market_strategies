@@ -1,14 +1,4 @@
-"""Transaction-cost stress sweep: identify cost-fragile strategies.
-
-For each strategy, runs the full backtest over a 5×4 grid of commission ×
-slippage values. Returns per-cell Sharpe ratios and two breakeven scalars:
-the smallest cost at which the strategy first loses its edge. Strategies that
-are already unprofitable at zero cost receive the "already_negative_at_zero_cost"
-sentinel; strategies that remain profitable across the full grid receive ">max_grid".
-
-CLI usage (from repo root):
-    python -m engine.cost_stress
-"""
+"""Transaction-cost stress sweep over a commission × slippage grid."""
 
 import importlib.util
 import inspect
@@ -16,7 +6,6 @@ import itertools
 import json
 import sys
 from pathlib import Path
-from typing import Union
 
 import pandas as pd
 
@@ -35,32 +24,11 @@ def cost_stress_sweep(
     strategy_cls,
     params: dict,
     dataset: pd.DataFrame,
-    commission_bps_range: list = None,
-    slippage_bps_range: list = None,
-    config: dict = None,
+    commission_bps_range: list | None = None,
+    slippage_bps_range: list | None = None,
+    config: dict | None = None,
 ) -> dict:
-    """Run a full backtest over a grid of commission × slippage cost assumptions.
-
-    Instantiates a fresh strategy instance for each grid cell to prevent state
-    leakage across cells in stateful strategies (RSI, Donchian, 52-Week High).
-    All other config parameters are held constant; only commission_bps and
-    slippage_bps vary.
-
-    Args:
-        strategy_cls: Strategy class that accepts **params on construction.
-        params: Constructor keyword arguments passed to strategy_cls per cell.
-        dataset: OHLCV DataFrame with DatetimeIndex. Must have ≥2 rows.
-        commission_bps_range: One-way commission levels in basis points.
-            Defaults to [0, 2, 5, 10, 20].
-        slippage_bps_range: Half-spread slippage levels in basis points.
-            Defaults to [0, 2, 5, 10].
-        config: Additional backtest config overrides. commission_bps and
-            slippage_bps in this dict are overwritten per grid cell.
-
-    Returns:
-        Dict mapping "(commission_bps, slippage_bps)" string keys to Sharpe
-        ratios (float, rounded to 6 decimal places). Default grid: 20 entries.
-    """
+    """Run the backtest over a grid of commission × slippage assumptions."""
     if commission_bps_range is None:
         commission_bps_range = DEFAULT_COMMISSION_BPS
     if slippage_bps_range is None:
@@ -83,28 +51,7 @@ def _first_negative_or_sentinel(
     sweep_range: list,
     held_value: int,
     sweep_axis: str,
-) -> Union[int, str]:
-    """Find the first cost level at which Sharpe goes negative.
-
-    Checks costs in ascending order. The held_value is the fixed cost on the
-    orthogonal axis (BASE_SLIPPAGE_BPS when sweeping commission, vice versa).
-
-    Returns ALREADY_NEGATIVE_SENTINEL when Sharpe is already negative at the
-    lowest cost in sweep_range (inclusive of zero cost when 0 is in the range).
-    Returns ABOVE_MAX_GRID_SENTINEL when Sharpe stays non-negative through the
-    entire sweep_range.
-
-    Args:
-        sweep_results: Output dict from cost_stress_sweep.
-        sweep_range: Sorted ascending list of cost levels to iterate.
-        held_value: Fixed cost on the other axis for this sweep.
-        sweep_axis: "commission" (sweep commission, hold slippage) or
-            "slippage" (sweep slippage, hold commission).
-
-    Returns:
-        First cost level where Sharpe < 0, or a sentinel string.
-    """
-
+) -> int | str:
     def _key(level: int) -> str:
         if sweep_axis == "commission":
             return f"({level}, {held_value})"
@@ -124,28 +71,10 @@ def _first_negative_or_sentinel(
 
 def compute_breakevens(
     sweep_results: dict,
-    commission_bps_range: list = None,
-    slippage_bps_range: list = None,
+    commission_bps_range: list | None = None,
+    slippage_bps_range: list | None = None,
 ) -> tuple:
-    """Compute cost breakeven thresholds for both cost axes.
-
-    Breakeven commission: smallest commission (with slippage held at
-    BASE_SLIPPAGE_BPS=5) at which Sharpe first becomes negative.
-    Breakeven slippage: smallest slippage (commission held at
-    BASE_COMMISSION_BPS=5) at which Sharpe first becomes negative.
-
-    Edge cases produce sentinel strings rather than numeric values:
-    - "already_negative_at_zero_cost": strategy loses money even with no costs.
-    - ">max_grid": strategy stays profitable across the full grid.
-
-    Args:
-        sweep_results: Output of cost_stress_sweep (20 cells for default grid).
-        commission_bps_range: Commission values used in the sweep (sorted internally).
-        slippage_bps_range: Slippage values used in the sweep (sorted internally).
-
-    Returns:
-        (breakeven_commission, breakeven_slippage) — each is an int or sentinel.
-    """
+    """Return (breakeven_commission_bps, breakeven_slippage_bps) for a sweep result."""
     if commission_bps_range is None:
         commission_bps_range = DEFAULT_COMMISSION_BPS
     if slippage_bps_range is None:
@@ -160,21 +89,7 @@ def compute_breakevens(
     return b_comm, b_slip
 
 
-def _aggregate_breakeven(breakevens: list) -> Union[int, str]:
-    """Aggregate per-dataset breakeven values into a single worst-case summary.
-
-    Priority (most fragile to least):
-    1. "already_negative_at_zero_cost" — any dataset has this → return it.
-    2. Minimum numeric breakeven — take the most fragile dataset.
-    3. ">max_grid" — all datasets retain positive Sharpe across full grid.
-
-    Args:
-        breakevens: List of breakeven values (ints or sentinel strings) from
-            multiple datasets for the same strategy.
-
-    Returns:
-        Single breakeven value representing the worst case across datasets.
-    """
+def _aggregate_breakeven(breakevens: list) -> int | str:
     if any(b == ALREADY_NEGATIVE_SENTINEL for b in breakevens):
         return ALREADY_NEGATIVE_SENTINEL
     numeric = [b for b in breakevens if isinstance(b, (int, float))]
@@ -184,15 +99,6 @@ def _aggregate_breakeven(breakevens: list) -> Union[int, str]:
 
 
 def _load_strategy_module(strategy_dir: Path, module_name: str):
-    """Load a strategy Python module from its file path via importlib.
-
-    Args:
-        strategy_dir: Directory containing strategy.py.
-        module_name: Name to assign the loaded module (must be a valid identifier).
-
-    Returns:
-        Loaded module object with attributes accessible via dot notation.
-    """
     spec = importlib.util.spec_from_file_location(
         module_name, strategy_dir / "strategy.py"
     )
@@ -202,21 +108,6 @@ def _load_strategy_module(strategy_dir: Path, module_name: str):
 
 
 def _get_strategy_class(mod):
-    """Extract the primary strategy class from a dynamically loaded module.
-
-    Identifies classes defined in the module itself (not imported from
-    dependencies) by checking that obj.__module__ matches the module's __name__.
-    Returns the first such class found alphabetically.
-
-    Args:
-        mod: Module loaded via _load_strategy_module.
-
-    Returns:
-        Strategy class.
-
-    Raises:
-        AttributeError: If no class defined in this module is found.
-    """
     for _, obj in sorted(inspect.getmembers(mod, inspect.isclass)):
         if obj.__module__ == mod.__name__:
             return obj
@@ -227,35 +118,10 @@ def run_all_strategies(
     strategies_json_path: Path,
     strategies_dir: Path,
     data_dir: Path,
-    commission_bps_range: list = None,
-    slippage_bps_range: list = None,
+    commission_bps_range: list | None = None,
+    slippage_bps_range: list | None = None,
 ) -> None:
-    """Run cost stress sweep for all strategies and write cost_stress.json files.
-
-    Reads strategies.json to discover registered strategies, loads each
-    strategy module, sweeps over all configured datasets, then writes
-    cost_stress.json to each strategy's directory.
-
-    Output JSON structure:
-        {
-          "<dataset_name>": {
-            "(c_bps, s_bps)": <sharpe>,  # 20 grid cells
-            ...,
-            "cost_breakeven_commission_bps": <int or sentinel>,
-            "cost_breakeven_slippage_bps": <int or sentinel>
-          },
-          ...,
-          "cost_breakeven_commission_bps": <worst-case across datasets>,
-          "cost_breakeven_slippage_bps": <worst-case across datasets>
-        }
-
-    Args:
-        strategies_json_path: Path to strategies.json registry file.
-        strategies_dir: Root directory containing <strategy-name>/ subdirectories.
-        data_dir: Directory containing <dataset_name>.csv files.
-        commission_bps_range: Commission bps values to sweep.
-        slippage_bps_range: Slippage bps values to sweep.
-    """
+    """Sweep all registered strategies and write cost_stress.json to each strategy dir."""
     if commission_bps_range is None:
         commission_bps_range = DEFAULT_COMMISSION_BPS
     if slippage_bps_range is None:
