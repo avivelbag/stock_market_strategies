@@ -323,6 +323,74 @@ def deflated_sharpe(
     return float(_norm.cdf(sr_star - emax))
 
 
+_REGIME_TREND_WINDOW = 20
+_REGIME_VOL_WINDOW = 20
+_REGIME_LOOKBACK = 252
+_REGIME_HIGH_VOL_PERCENTILE = 0.75
+_REGIME_TRENDING_DRIFT_PERCENTILE = 0.5
+_REGIME_MIN_BARS = 30
+
+
+def regime_conditional_sharpe(returns: pd.Series, prices: pd.DataFrame) -> dict:
+    """Classify each bar into a market regime and compute per-regime annualized Sharpe ratios.
+
+    Uses only lagged data to avoid lookahead: regime label at bar t depends solely
+    on prices through bar t-1, so the label is known before the return is captured.
+
+    Regime classifier:
+    - vol[t]: 20-bar rolling std of log-returns ending at bar t-1 (lagged one bar).
+    - vol_pct[t]: percentile rank of vol[t] in the trailing 252-bar vol distribution.
+    - drift_abs[t]: |close[t-1] - close[t-21]| / close[t-21] — 20-bar absolute price
+      change, fully lagged.
+    - drift_pct[t]: percentile rank of drift_abs[t] in the trailing 252-bar distribution.
+
+    Labels (mutually exclusive, collectively exhaustive):
+    - high_vol: vol_pct > 0.75 (top quartile of rolling volatility)
+    - trending: drift_pct > 0.5 AND NOT high_vol (strong directional drift, low vol)
+    - ranging: NOT high_vol AND NOT trending (weak drift, low vol)
+
+    Regimes with fewer than _REGIME_MIN_BARS (30) valid return observations report NaN.
+
+    Args:
+        returns: Daily equity pct_change() aligned to prices.index.
+        prices: OHLCV DataFrame with at least a 'close' column and the same
+            DatetimeIndex as the equity series that produced returns.
+
+    Returns:
+        Dict with keys 'trending', 'ranging', 'high_vol' (float or NaN) and
+        'regime_counts' (dict with integer counts that sum to len(prices)).
+    """
+    close = prices["close"]
+    log_ret = np.log(close / close.shift(1))
+
+    vol = log_ret.shift(1).rolling(_REGIME_VOL_WINDOW, min_periods=_REGIME_VOL_WINDOW).std()
+    vol_pct = vol.rolling(_REGIME_LOOKBACK, min_periods=1).rank(pct=True)
+
+    close_lag1 = close.shift(1)
+    drift_abs = (close_lag1 - close_lag1.shift(_REGIME_TREND_WINDOW)).abs() / close_lag1.shift(_REGIME_TREND_WINDOW)
+    drift_pct = drift_abs.rolling(_REGIME_LOOKBACK, min_periods=1).rank(pct=True)
+
+    high_vol = vol_pct > _REGIME_HIGH_VOL_PERCENTILE
+    trending = (drift_pct > _REGIME_TRENDING_DRIFT_PERCENTILE) & ~high_vol
+    ranging = ~high_vol & ~trending
+
+    result = {}
+    for label, mask in [("high_vol", high_vol), ("trending", trending), ("ranging", ranging)]:
+        r = returns[mask].dropna()
+        if len(r) < _REGIME_MIN_BARS:
+            result[label] = float("nan")
+        else:
+            std = r.std()
+            result[label] = 0.0 if std == 0 else float(r.mean() / std * np.sqrt(ANNUALIZE))
+
+    result["regime_counts"] = {
+        "high_vol": int(high_vol.sum()),
+        "trending": int(trending.sum()),
+        "ranging": int(ranging.sum()),
+    }
+    return result
+
+
 def compute_all(
     equity: pd.Series,
     positions: pd.Series,
