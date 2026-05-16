@@ -1,0 +1,47 @@
+[
+  {
+    "id": "leaderboard",
+    "title": "The Leaderboard",
+    "tagline": "Five judging criteria, four strategies — watch a green in-sample Sharpe turn red out-of-sample.",
+    "year": 2026,
+    "technique": "dashboard / walk-forward comparison",
+    "path": "pieces/leaderboard",
+    "thumbnail": "pieces/leaderboard/thumbnail.svg"
+  },
+  {
+    "id": "01-dual-ema-momentum",
+    "title": "Dual EMA Crossover Momentum",
+    "tagline": "Why a fast/slow EMA crossover rides trends and bleeds in chop — dissected across four regimes.",
+    "year": 2026,
+    "technique": "backtest / momentum / EMA crossover",
+    "path": "pieces/01-dual-ema-momentum",
+    "thumbnail": "pieces/01-dual-ema-momentum/thumbnail.svg"
+  },
+  {
+    "id": "02-rsi-mean-reversion",
+    "title": "RSI Mean-Reversion (Connors RSI-2)",
+    "tagline": "Buying two-day panic: a behavioural reversal edge shown both winning and losing.",
+    "year": 2026,
+    "technique": "backtest / mean reversion / RSI(2)",
+    "path": "pieces/02-rsi-mean-reversion",
+    "thumbnail": "pieces/02-rsi-mean-reversion/thumbnail.svg"
+  },
+  {
+    "id": "03-donchian-turtle-breakout",
+    "title": "Donchian Turtle Breakout",
+    "tagline": "Trading the supply vacuum above a 20-bar high — the original Turtle system.",
+    "year": 2026,
+    "technique": "backtest / breakout / Donchian channel",
+    "path": "pieces/03-donchian-turtle-breakout",
+    "thumbnail": "pieces/03-donchian-turtle-breakout/thumbnail.svg"
+  },
+  {
+    "id": "04-52wk-high-proximity",
+    "title": "52-Week High Proximity",
+    "tagline": "A famous cross-sectional anchoring anomaly — and why one isolated series can't show it.",
+    "year": 2026,
+    "technique": "backtest / anchoring bias / 52-week high",
+    "path": "pieces/04-52wk-high-proximity",
+    "thumbnail": "pieces/04-52wk-high-proximity/thumbnail.svg"
+  }
+]

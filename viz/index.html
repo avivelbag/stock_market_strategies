@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strategy Lab — Backtest Gallery</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>STRATEGY LAB</h1>
+    <button id="theme-toggle" aria-label="Toggle dark/light mode">◑</button>
+  </header>
+  <p class="subtitle">Each card opens an interactive, self-explaining backtest. Built from the real engine — see <code>viz/build.py</code>.</p>
+  <div id="grid"></div>
+
+  <script>
+    // Theme: persisted in localStorage under "theme" (shared with piece pages).
+    (function () {
+      const saved = localStorage.getItem('theme');
+      if (saved) document.documentElement.dataset.theme = saved;
+    })();
+
+    document.getElementById('theme-toggle').addEventListener('click', function () {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('theme', next);
+    });
+
+    let focusedIdx = -1;
+    const getCards = () => Array.from(document.querySelectorAll('.card'));
+
+    document.addEventListener('keydown', function (e) {
+      const cards = getCards();
+      if (!cards.length) return;
+      if (e.key === 'ArrowRight') {
+        focusedIdx = Math.min(focusedIdx + 1, cards.length - 1);
+        cards[focusedIdx].focus();
+      } else if (e.key === 'ArrowLeft') {
+        focusedIdx = Math.max(focusedIdx - 1, 0);
+        cards[focusedIdx].focus();
+      } else if (e.key === 'Escape' && focusedIdx >= 0) {
+        cards[focusedIdx].blur();
+        focusedIdx = -1;
+      }
+    });
+
+    document.addEventListener('focusin', function (e) {
+      const idx = getCards().indexOf(e.target);
+      if (idx !== -1) focusedIdx = idx;
+    });
+
+    async function init() {
+      const grid = document.getElementById('grid');
+
+      if (window.location.protocol === 'file:') {
+        grid.innerHTML = `
+          <div id="empty-state">
+            <p><strong>Local file restriction:</strong> browsers block <code>fetch()</code> on <code>file://</code> URLs.</p>
+            <p>Serve the gallery instead:</p>
+            <code style="display:block;background:rgba(128,128,128,0.1);padding:1rem;margin:1rem 0;border-radius:4px;">cd viz &amp;&amp; python3 -m http.server</code>
+            <p>then open <code>localhost:8000</code>.</p>
+          </div>`;
+        return;
+      }
+
+      let pieces;
+      try {
+        const res = await fetch('./pieces.json');
+        if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+        pieces = await res.json();
+      } catch (err) {
+        console.error('Gallery init error:', err);
+        grid.innerHTML = `<p id="empty-state">Could not load gallery data. (${err.message})</p>`;
+        return;
+      }
+
+      if (!Array.isArray(pieces) || !pieces.length) {
+        const msg = document.createElement('p');
+        msg.id = 'empty-state';
+        msg.textContent = 'No pieces yet — run `python3 viz/build.py`.';
+        grid.appendChild(msg);
+        return;
+      }
+
+      for (const piece of pieces) {
+        const card = document.createElement('a');
+        card.className = 'card';
+        card.href = piece.path + '/index.html';
+        card.rel = 'noopener';
+
+        const img = document.createElement('img');
+        img.src = piece.thumbnail;
+        img.alt = piece.title;
+        img.loading = 'lazy';
+
+        const body = document.createElement('div');
+        body.className = 'card-body';
+
+        const title = document.createElement('h2');
+        title.className = 'card-title';
+        title.textContent = piece.title;
+
+        const tagline = document.createElement('p');
+        tagline.className = 'card-tagline';
+        tagline.textContent = piece.tagline;
+
+        const tech = document.createElement('div');
+        tech.className = 'card-tech';
+        tech.textContent = piece.technique;
+
+        body.appendChild(title);
+        body.appendChild(tagline);
+        body.appendChild(tech);
+        card.appendChild(img);
+        card.appendChild(body);
+        grid.appendChild(card);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

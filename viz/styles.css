@@ -1,0 +1,326 @@
+/* Gallery + piece styling. Base palette and card grid mirror
+   ~/Documents/git/computer_art/styles.css; the lower half adds the
+   dashboard-specific components (dataset tabs, charts, metrics, leaderboard).
+   Every colour is a CSS variable so the dark/light toggle flips the whole
+   site, charts included (canvas reads these via getComputedStyle). */
+
+:root {
+  --bg: #f5f0eb;
+  --text: #111;
+  --muted: #5a5a5a;
+  --card-bg: #fff;
+  --card-border: #ddd;
+  --accent: #555;
+  --grid-line: #e2ddd6;
+  --pos: #1a7f37;
+  --neg: #b3261e;
+  --price: #444;
+  --equity: #1a7f37;
+  --bench: #9a9a9a;
+  --ov1: #1f6feb;
+  --ov2: #d4761a;
+  --shade: rgba(26, 127, 55, 0.10);
+  --gap: 1.5rem;
+}
+
+[data-theme="dark"] {
+  --bg: #0e0e0e;
+  --text: #e8e8e8;
+  --muted: #9a9a9a;
+  --card-bg: #1a1a1a;
+  --card-border: #333;
+  --accent: #e8e0d0;
+  --grid-line: #262626;
+  --pos: #3fb950;
+  --neg: #f85149;
+  --price: #b9b9b9;
+  --equity: #3fb950;
+  --bench: #6e7681;
+  --ov1: #58a6ff;
+  --ov2: #e3a008;
+  --shade: rgba(63, 185, 80, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
+  line-height: 1.55;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap);
+  position: relative;
+}
+
+h1 {
+  margin: 0;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  font-size: 1.5rem;
+}
+
+#theme-toggle {
+  position: absolute;
+  right: var(--gap);
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+#theme-toggle:hover { opacity: 0.75; }
+
+.subtitle {
+  text-align: center;
+  margin: -0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---- gallery grid (mirrors computer_art) ---- */
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--gap);
+  padding: var(--gap);
+}
+
+@media (max-width: 600px) {
+  #grid { grid-template-columns: 1fr; }
+  #theme-toggle { position: static; margin-left: auto; }
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.card:focus { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  background: #0f1117;
+}
+
+.card-body { padding: 1rem; flex: 1; }
+.card-title { margin: 0 0 0.25rem; font-size: 1rem; font-weight: 600; }
+.card-tagline { margin: 0 0 0.5rem; font-size: 0.85rem; opacity: 0.7; }
+.card-tech {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+#empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 1rem;
+  font-style: italic;
+  opacity: 0.5;
+}
+
+/* ---- piece pages ---- */
+
+.piece {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 var(--gap) 4rem;
+}
+
+.back { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+.back:hover { color: var(--text); }
+
+.lede {
+  border-left: 3px solid var(--accent);
+  padding: 0.4rem 0 0.4rem 1rem;
+  margin: 1.25rem 0;
+  color: var(--text);
+}
+
+.rule {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.9rem;
+  display: inline-block;
+}
+
+h2.section {
+  font-weight: 400;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 0.35rem;
+  margin: 2.25rem 0 1rem;
+}
+
+.tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+
+.tab {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text);
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: all 0.15s ease;
+}
+.tab:hover { border-color: var(--accent); }
+.tab[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.verdict-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.v-favourable { background: var(--shade); color: var(--pos); border: 1px solid var(--pos); }
+.v-adverse { background: rgba(179,38,30,0.12); color: var(--neg); border: 1px solid var(--neg); }
+.v-marginal { background: rgba(150,150,150,0.15); color: var(--muted); border: 1px solid var(--muted); }
+
+.chart-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 1rem 1rem 0.75rem;
+  margin: 1rem 0;
+}
+.chart-title { font-size: 0.85rem; color: var(--muted); margin: 0 0 0.5rem; }
+canvas.chart { width: 100%; height: auto; display: block; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+.legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.swatch.dash { height: 0; border-top: 2px dashed var(--bench); }
+.swatch.box { width: 12px; height: 12px; border-radius: 2px; }
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.metric {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 0.7rem 0.85rem;
+}
+.metric .label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.metric .value { font-size: 1.25rem; font-weight: 600; margin-top: 0.15rem; }
+.metric .value.pos { color: var(--pos); }
+.metric .value.neg { color: var(--neg); }
+
+.interp {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.92rem;
+}
+.interp .regime { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.35rem; }
+
+/* ---- leaderboard ---- */
+
+.lb-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
+.lb-table th, .lb-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--card-border);
+  text-align: right;
+}
+.lb-table th { color: var(--muted); font-weight: 500; text-align: right; }
+.lb-table th:first-child, .lb-table td:first-child { text-align: left; }
+.lb-table tbody tr:hover { background: var(--shade); }
+.cell-pos { color: var(--pos); }
+.cell-neg { color: var(--neg); }
+.heat { padding: 0.25rem 0.5rem; border-radius: 4px; font-variant-numeric: tabular-nums; }
+
+.criteria { list-style: none; padding: 0; margin: 1rem 0; }
+.criteria li {
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.5rem;
+  background: var(--card-bg);
+}
+.criteria b { color: var(--text); }
+
+.small-multiples {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.sm-cell {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 0.6rem;
+}
+.sm-cell h4 { margin: 0 0 0.1rem; font-size: 0.82rem; }
+.sm-cell .sm-sub { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.4rem; }
+
+.err {
+  max-width: 720px;
+  margin: 3rem auto;
+  padding: 1.5rem;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+.err code {
+  display: block;
+  background: rgba(128,128,128,0.12);
+  padding: 0.8rem;
+  border-radius: 4px;
+  margin: 0.75rem 0;
+}
