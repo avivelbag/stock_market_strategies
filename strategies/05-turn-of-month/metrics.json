@@ -32,7 +32,8 @@
       "oos_cagr_mean": -0.085575,
       "oos_max_drawdown_mean": -0.119292,
       "oos_consistency": 0.2
-    }
+    },
+    "pbo": 0.804274
   },
   "mean_rev_ou": {
     "cagr": -0.045351,
@@ -67,7 +68,8 @@
       "oos_cagr_mean": -0.054053,
       "oos_max_drawdown_mean": -0.077293,
       "oos_consistency": 0.4
-    }
+    },
+    "pbo": 0.608236
   },
   "regime_switch": {
     "cagr": 0.021377,
@@ -102,7 +104,8 @@
       "oos_cagr_mean": 0.001798,
       "oos_max_drawdown_mean": -0.075121,
       "oos_consistency": 0.6
-    }
+    },
+    "pbo": 0.779099
   },
   "fat_tail": {
     "cagr": -0.012818,
@@ -137,6 +140,7 @@
       "oos_cagr_mean": 0.04415,
       "oos_max_drawdown_mean": -0.080855,
       "oos_consistency": 0.8
-    }
+    },
+    "pbo": 0.373582
   }
 }

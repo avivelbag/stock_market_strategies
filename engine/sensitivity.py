@@ -12,7 +12,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 
-from engine.backtest import run
+from engine.backtest import _run_internal, run
 
 
 def _grid_values(value, multipliers=(0.8, 0.9, 1.0, 1.1, 1.2)):
@@ -143,3 +143,57 @@ def parameter_sweep(
         "n_trials": n_trials,
         "sensitivity_score": sensitivity_score,
     }
+
+
+def build_trials_matrix(
+    strategy_factory: Callable,
+    param_grid: dict,
+    prices_df: pd.DataFrame,
+    engine_kwargs: dict = {},
+) -> np.ndarray:
+    """Build an (n_bars-1 × n_trials) daily-return matrix from a parameter sweep.
+
+    Runs the full backtest for every combination in param_grid and collects the
+    daily return series for each trial. The resulting matrix has one column per
+    valid (non-skipped) trial, aligned to a common time axis. The column order
+    matches itertools.product(*param_grid.values()), which is the same
+    deterministic order used by parameter_sweep — so trial k in this matrix
+    corresponds to trial k in the sensitivity summary.
+
+    Args:
+        strategy_factory: Callable that accepts a single dict of parameters and
+            returns a strategy instance ready to pass to engine.backtest.run.
+        param_grid: Dict mapping parameter names to lists of candidate values,
+            as returned by build_param_grid.
+        prices_df: OHLCV DataFrame with DatetimeIndex; passed verbatim to
+            engine.backtest._run_internal for each combination.
+        engine_kwargs: Optional config dict forwarded to _run_internal.
+
+    Returns:
+        np.ndarray of shape (n_bars-1, n_trials) where n_bars = len(prices_df).
+        Returns an empty array of shape (n_bars-1, 0) when all trials fail.
+    """
+    keys = list(param_grid.keys())
+    values = list(param_grid.values())
+    config = engine_kwargs if engine_kwargs else None
+    n_bars = len(prices_df)
+
+    trial_cols: list[np.ndarray] = []
+    for combo in itertools.product(*values):
+        params = dict(zip(keys, combo))
+        try:
+            strategy = strategy_factory(params)
+        except (ValueError, TypeError):
+            continue
+        try:
+            equity, _, _, _ = _run_internal(strategy, prices_df, config)
+            returns = equity.pct_change().dropna().values
+            if len(returns) == n_bars - 1:
+                trial_cols.append(returns)
+        except Exception:
+            continue
+
+    if not trial_cols:
+        return np.empty((n_bars - 1, 0))
+
+    return np.column_stack(trial_cols)

@@ -163,7 +163,7 @@ def _run_internal(
     return equity_series, gross_equity_series, positions_series, risk_free_rate
 
 
-def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
+def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None, trials_matrix: np.ndarray = None) -> dict:
     """Run a vectorized backtest with t→t+1 fill and look-ahead protection.
 
     Signal semantics:
@@ -193,11 +193,18 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
             ``allow_short`` (bool, default False): allow negative position signals.
             ``initial_capital`` (float, default 10_000): starting portfolio value.
             ``risk_free_rate`` (float, default 0.0): annualized risk-free rate.
+        trials_matrix: Optional (n_bars × n_trials) array of daily returns from a
+            parameter sweep. When provided, "pbo" is included in the returned dict.
+            Pass the output of engine.sensitivity.build_trials_matrix. When
+            sensitivity.json is present for the strategy, callers should re-run the
+            parameter sweep and pass the resulting matrix here so that PBO is
+            computed alongside all other metrics.
 
     Returns:
         Dict of metric scalars from engine.metrics (see metrics.compute_all).
         Does not include deflated_sharpe — use engine.antioverfitting.run_with_dsr
-        for a result that also includes the DSR.
+        for a result that also includes the DSR. Includes "pbo" when trials_matrix
+        is provided.
 
     Raises:
         LookAheadError: If the strategy accesses prices beyond the current bar.
@@ -206,7 +213,7 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
     equity_series, _gross, positions_series, risk_free_rate = _run_internal(
         strategy_fn, prices_df, config
     )
-    result = _metrics.compute_all(equity_series, positions_series, risk_free_rate)
+    result = _metrics.compute_all(equity_series, positions_series, risk_free_rate, trials_matrix)
     result["regime_sharpe"] = _metrics.regime_conditional_sharpe(
         equity_series.pct_change(), prices_df
     )
