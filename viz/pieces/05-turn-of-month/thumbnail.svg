@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" font-family="system-ui,sans-serif">
+  <rect width="320" height="240" fill="#0f1117"/>
+  <text x="14" y="22" fill="#e8e8e8" font-size="13" font-weight="600">Turn-of-Month Calendar Effect</text>
+  <text x="14" y="40" fill="#8b949e" font-size="10">~24% exposure, calendar-driven, zero free parameters</text>
+  <line x1="14" y1="180" x2="306" y2="180" stroke="#30363d" stroke-width="1"/>
+  <polyline points="14,180 60,178 80,182 100,179 130,184 150,181 170,177 200,183 220,180 250,178 270,182 306,179" fill="none" stroke="#6e7681" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <polyline points="14,180 60,179 80,181 100,180 130,183 150,181 170,178 200,182 220,180 250,179 270,181 306,180" fill="none" stroke="#58a6ff" stroke-width="2"/>
+  <text x="306" y="226" fill="#8b949e" font-size="12" text-anchor="end">≈0 edge on synthetic data</text>
+</svg>

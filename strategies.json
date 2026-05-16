@@ -38,5 +38,15 @@
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/04-52wk-high-proximity/metrics.json",
     "relates_to": []
+  },
+  {
+    "id": "05",
+    "name": "05-turn-of-month",
+    "title": "Turn-of-Month Calendar Effect",
+    "thesis_tag": "calendar",
+    "path": "strategies/05-turn-of-month",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/05-turn-of-month/metrics.json",
+    "relates_to": []
   }
 ]
