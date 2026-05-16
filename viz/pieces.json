@@ -61,5 +61,14 @@
     "technique": "backtest / mean reversion / Bollinger Bands",
     "path": "pieces/06-bollinger-mean-reversion",
     "thumbnail": "pieces/06-bollinger-mean-reversion/thumbnail.svg"
+  },
+  {
+    "id": "07-absolute-momentum",
+    "title": "Absolute Momentum (Trend Filter)",
+    "tagline": "The simplest crash filter: long only when trailing 252-bar return is positive — Antonacci's absolute momentum applied across four synthetic regimes.",
+    "year": 2026,
+    "technique": "backtest / momentum / absolute momentum / trend filter",
+    "path": "pieces/07-absolute-momentum",
+    "thumbnail": "pieces/07-absolute-momentum/thumbnail.svg"
   }
 ]

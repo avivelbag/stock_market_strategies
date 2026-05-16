@@ -144,6 +144,16 @@ def main():
     out06.write_text(json.dumps(metrics06, indent=2) + "\n")
     print(f"Written: {out06}")
 
+    # Strategy 07: Absolute Momentum (Trend Filter)
+    s07_dir = STRATEGIES_DIR / "07-absolute-momentum"
+    mod07 = _load_strategy_module(s07_dir, "abs_mom_strategy")
+    metrics07 = compute_strategy_metrics(
+        mod07.AbsoluteMomentum, {"lookback": 252, "threshold": 0.0}
+    )
+    out07 = s07_dir / "metrics.json"
+    out07.write_text(json.dumps(metrics07, indent=2) + "\n")
+    print(f"Written: {out07}")
+
     print("Done.")
 
 
