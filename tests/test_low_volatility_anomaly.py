@@ -500,12 +500,12 @@ class TestSensitivityJson:
         for key in ("trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"):
             assert key in data
 
-    def test_n_trials_is_125_on_all_datasets(self):
-        """5×5×5 Cartesian grid = 125 combinations."""
+    def test_n_trials_is_at_most_25_on_all_datasets(self):
+        """sweep_and_score caps at max_points=25; 5×5×5=125 combos are sub-sampled."""
         data = self._load()
         for dataset, stats in data.items():
-            assert stats["n_trials"] == 125, (
-                f"Expected 125 trials on {dataset}, got {stats['n_trials']}"
+            assert 0 < stats["n_trials"] <= 25, (
+                f"Expected 1–25 trials on {dataset}, got {stats['n_trials']}"
             )
 
     def test_sensitivity_scores_are_non_negative(self):

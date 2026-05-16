@@ -5,7 +5,9 @@
     "min_sharpe": -0.531349,
     "max_sharpe": -0.248961,
     "n_trials": 25,
-    "sensitivity_score": 0.275611
+    "sensitivity_score": 0.275611,
+    "dispersion": 0.113784,
+    "stable_fraction": 0.6
   },
   "mean_rev_ou": {
     "mean_sharpe": -0.514747,
@@ -13,7 +15,9 @@
     "min_sharpe": -0.955326,
     "max_sharpe": -0.147639,
     "n_trials": 25,
-    "sensitivity_score": 0.507072
+    "sensitivity_score": 0.507072,
+    "dispersion": 0.261014,
+    "stable_fraction": 0.2
   },
   "regime_switch": {
     "mean_sharpe": 1.095975,
@@ -21,7 +25,9 @@
     "min_sharpe": 0.90755,
     "max_sharpe": 1.233704,
     "n_trials": 25,
-    "sensitivity_score": 0.112254
+    "sensitivity_score": 0.112254,
+    "dispersion": 0.123028,
+    "stable_fraction": 0.6
   },
   "fat_tail": {
     "mean_sharpe": -0.343803,
@@ -29,6 +35,8 @@
     "min_sharpe": -0.620855,
     "max_sharpe": -0.026311,
     "n_trials": 25,
-    "sensitivity_score": 0.704661
+    "sensitivity_score": 0.704661,
+    "dispersion": 0.242264,
+    "stable_fraction": 0.4
   }
 }

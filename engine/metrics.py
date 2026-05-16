@@ -459,6 +459,37 @@ def sharpe_ci(
     return lo, point, hi
 
 
+def parameter_sensitivity_dispersion(sharpe_values: list) -> float:
+    """Standard deviation of Sharpe ratios collected from a parameter sweep.
+
+    Sharpe, Sortino, and even PBO are silent about whether the reported result
+    is a smooth maximum or a knife-edge optimum; a strategy with Sharpe 1.2 at
+    tuned params and 0.1 at ±10% is far more suspect than one with Sharpe 1.0
+    stable across ±50%.  Low dispersion indicates that performance barely shifts
+    when parameters move — evidence against overfitting to the calibrated defaults.
+    High dispersion signals a knife-edge optimum where the reported result is
+    contingent on the exact parameter choice.
+
+    Resists gaming: expressed as an absolute standard deviation, not a coefficient
+    of variation.  A strategy cannot reduce its dispersion score by claiming a high
+    mean Sharpe — the value is invariant to the mean level.  The complementary
+    metric ``stable_fraction`` (see ``engine.sensitivity.sweep_and_score``) further
+    checks how many grid points land within a Sharpe band of the default-parameter
+    result.
+
+    Args:
+        sharpe_values: List of Sharpe ratios from a parameter sweep, one value
+            per grid point evaluated.
+
+    Returns:
+        Population standard deviation of sharpe_values.  Returns 0.0 for fewer
+        than 2 values (a single-point sweep is trivially dispersion-free).
+    """
+    if len(sharpe_values) < 2:
+        return 0.0
+    return float(np.std(sharpe_values))
+
+
 def compute_all(
     equity: pd.Series,
     positions: pd.Series,
