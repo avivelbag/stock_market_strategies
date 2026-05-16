@@ -43,5 +43,14 @@
     "technique": "backtest / anchoring bias / 52-week high",
     "path": "pieces/04-52wk-high-proximity",
     "thumbnail": "pieces/04-52wk-high-proximity/thumbnail.svg"
+  },
+  {
+    "id": "05-turn-of-month",
+    "title": "Turn-of-Month Calendar Effect",
+    "tagline": "Zero free parameters, calendar-only signal — and why synthetic data has no institutional flows.",
+    "year": 2026,
+    "technique": "backtest / calendar effect / institutional flows",
+    "path": "pieces/05-turn-of-month",
+    "thumbnail": "pieces/05-turn-of-month/thumbnail.svg"
   }
 ]
