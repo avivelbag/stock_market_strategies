@@ -12,6 +12,7 @@
     "tail_ratio": 0.880718,
     "exposure": 0.475,
     "deflated_sharpe": 0.11507,
+    "cost_to_alpha_ratio": null,
     "regime_sharpe": {
       "high_vol": 0.458529,
       "trending": -1.189041,
@@ -43,6 +44,7 @@
     "tail_ratio": 1.048935,
     "exposure": 0.508,
     "deflated_sharpe": 0.703054,
+    "cost_to_alpha_ratio": 7.778517,
     "regime_sharpe": {
       "high_vol": 1.33413,
       "trending": -0.02894,
@@ -74,6 +76,7 @@
     "tail_ratio": 1.109238,
     "exposure": 0.632,
     "deflated_sharpe": 0.914469,
+    "cost_to_alpha_ratio": 18.594349,
     "regime_sharpe": {
       "high_vol": 0.920429,
       "trending": 0.22572,
@@ -105,6 +108,7 @@
     "tail_ratio": 1.024692,
     "exposure": 0.425,
     "deflated_sharpe": 0.705944,
+    "cost_to_alpha_ratio": 6.918219,
     "regime_sharpe": {
       "high_vol": -0.09288,
       "trending": -0.567724,

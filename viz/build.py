@@ -308,7 +308,7 @@ def build_strategy(spec: dict) -> dict:
 
     for name in DATASETS:
         df = _load_data(name)
-        equity_s, pos_s, rfr = backtest._run_internal(cls(**params), df)
+        equity_s, _gross_s, pos_s, rfr = backtest._run_internal(cls(**params), df)
         m = em.compute_all(equity_s, pos_s, rfr)
         m["deflated_sharpe"] = compute_dsr(equity_s, n_trials=1)
         m["walk_forward"] = backtest.walk_forward_backtest(cls, params, df)

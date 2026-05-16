@@ -39,9 +39,11 @@ def _load_data(name: str) -> pd.DataFrame:
 
 
 def _round_float(v):
-    """Round float to 6 decimal places; convert NaN to None for valid JSON."""
+    """Round float to 6 decimal places; convert NaN and inf to None for valid JSON."""
     if isinstance(v, float):
-        return None if math.isnan(v) else round(v, 6)
+        if math.isnan(v) or math.isinf(v):
+            return None
+        return round(v, 6)
     return v
 
 
@@ -49,11 +51,12 @@ def compute_strategy_metrics(strategy_cls, params: dict) -> dict:
     result = {}
     for dataset in DATASETS:
         df = _load_data(dataset)
-        equity_series, positions_series, rfr = backtest._run_internal(
+        equity_series, gross_equity_series, positions_series, rfr = backtest._run_internal(
             strategy_cls(**params), df
         )
         base = em.compute_all(equity_series, positions_series, rfr)
         base["deflated_sharpe"] = compute_dsr(equity_series, n_trials=1)
+        base["cost_to_alpha_ratio"] = em.cost_to_alpha_ratio(gross_equity_series, equity_series)
 
         rs_raw = em.regime_conditional_sharpe(equity_series.pct_change(), df)
         rs_clean = {}
@@ -120,6 +123,26 @@ def main():
     out04 = s04_dir / "metrics.json"
     out04.write_text(json.dumps(metrics04, indent=2) + "\n")
     print(f"Written: {out04}")
+
+    # Strategy 05: Turn-of-Month Calendar Effect
+    s05_dir = STRATEGIES_DIR / "05-turn-of-month"
+    mod05 = _load_strategy_module(s05_dir, "tom_strategy")
+    metrics05 = compute_strategy_metrics(
+        mod05.TurnOfMonth, {"tail_days": 2, "head_days": 3}
+    )
+    out05 = s05_dir / "metrics.json"
+    out05.write_text(json.dumps(metrics05, indent=2) + "\n")
+    print(f"Written: {out05}")
+
+    # Strategy 06: Bollinger Band Mean-Reversion
+    s06_dir = STRATEGIES_DIR / "06-bollinger-mean-reversion"
+    mod06 = _load_strategy_module(s06_dir, "bollinger_strategy")
+    metrics06 = compute_strategy_metrics(
+        mod06.BollingerMeanReversion, {"window": 20, "nstd": 2.0, "exit_window": 20}
+    )
+    out06 = s06_dir / "metrics.json"
+    out06.write_text(json.dumps(metrics06, indent=2) + "\n")
+    print(f"Written: {out06}")
 
     print("Done.")
 
