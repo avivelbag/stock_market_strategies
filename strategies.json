@@ -8,5 +8,15 @@
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/01-dual-ema-momentum/metrics.json",
     "relates_to": []
+  },
+  {
+    "id": "02",
+    "name": "02-rsi-mean-reversion",
+    "title": "RSI Mean-Reversion (Connors RSI-2)",
+    "thesis_tag": "mean_reversion",
+    "path": "strategies/02-rsi-mean-reversion",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/02-rsi-mean-reversion/metrics.json",
+    "relates_to": ["01-dual-ema-momentum"]
   }
 ]

@@ -1,0 +1,82 @@
+{
+  "trend_gbm": {
+    "cagr": -0.033051,
+    "volatility": 0.142233,
+    "sharpe": -0.16522,
+    "sortino": -0.189422,
+    "calmar": -0.110137,
+    "max_drawdown": -0.300088,
+    "time_in_drawdown": 0.975,
+    "turnover": 0.06,
+    "hit_rate": 0.244244,
+    "tail_ratio": 0.976087,
+    "exposure": 0.492,
+    "walk_forward": {
+      "oos_sharpe_mean": -0.317773,
+      "oos_sharpe_std": 0.844334,
+      "oos_cagr_mean": -0.061106,
+      "oos_max_drawdown_mean": -0.115365,
+      "oos_consistency": 0.6
+    }
+  },
+  "mean_rev_ou": {
+    "cagr": 0.010581,
+    "volatility": 0.144286,
+    "sharpe": 0.144981,
+    "sortino": 0.168273,
+    "calmar": 0.070142,
+    "max_drawdown": -0.150852,
+    "time_in_drawdown": 0.986,
+    "turnover": 0.061,
+    "hit_rate": 0.245245,
+    "tail_ratio": 1.080865,
+    "exposure": 0.5,
+    "walk_forward": {
+      "oos_sharpe_mean": 0.18587,
+      "oos_sharpe_std": 0.71703,
+      "oos_cagr_mean": 0.019753,
+      "oos_max_drawdown_mean": -0.097303,
+      "oos_consistency": 0.6
+    }
+  },
+  "regime_switch": {
+    "cagr": 0.113043,
+    "volatility": 0.115342,
+    "sharpe": 0.986276,
+    "sortino": 1.090617,
+    "calmar": 1.005334,
+    "max_drawdown": -0.112444,
+    "time_in_drawdown": 0.936,
+    "turnover": 0.069,
+    "hit_rate": 0.241241,
+    "tail_ratio": 1.236284,
+    "exposure": 0.45,
+    "walk_forward": {
+      "oos_sharpe_mean": 0.73825,
+      "oos_sharpe_std": 0.31277,
+      "oos_cagr_mean": 0.083319,
+      "oos_max_drawdown_mean": -0.076298,
+      "oos_consistency": 1.0
+    }
+  },
+  "fat_tail": {
+    "cagr": 0.086342,
+    "volatility": 0.124319,
+    "sharpe": 0.727957,
+    "sortino": 0.800613,
+    "calmar": 0.509155,
+    "max_drawdown": -0.16958,
+    "time_in_drawdown": 0.956,
+    "turnover": 0.078,
+    "hit_rate": 0.231231,
+    "tail_ratio": 1.114596,
+    "exposure": 0.45,
+    "walk_forward": {
+      "oos_sharpe_mean": 0.575648,
+      "oos_sharpe_std": 1.418149,
+      "oos_cagr_mean": 0.076591,
+      "oos_max_drawdown_mean": -0.090145,
+      "oos_consistency": 0.6
+    }
+  }
+}
