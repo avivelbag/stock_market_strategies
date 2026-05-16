@@ -140,5 +140,23 @@
       "regime_switch": 0.3479, "fat_tail": 0.4458
     },
     "relates_to": ["02-rsi-mean-reversion", "07-absolute-momentum", "08-nr7-breakout", "09-volatility-managed"]
+  },
+  {
+    "id": "11",
+    "name": "11-pairs-mean-reversion",
+    "title": "Statistical Pairs Mean-Reversion (Gatev et al. 2006)",
+    "thesis_tag": "pairs_cointegration",
+    "path": "strategies/11-pairs-mean-reversion",
+    "datasets": ["paired_cointegrated"],
+    "metrics": "strategies/11-pairs-mean-reversion/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.6055,
+      "mean_rev_ou": 0.3158,
+      "regime_switch": 0.6459,
+      "fat_tail": 0.2866,
+      "paired_cointegrated": 0.824786,
+      "note": "bootstrap-based (block bootstrap, n_trials=16). trend_gbm/mean_rev_ou/regime_switch/fat_tail values are schema-compliance entries — strategy is designed for co-integrated paired data, not single-series. paired_cointegrated is the informative value."
+    },
+    "relates_to": ["02-rsi-mean-reversion", "06-bollinger-mean-reversion"]
   }
 ]

@@ -33,3 +33,18 @@ Re-running the script reproduces byte-identical files.
   unit variance, sigma=0.20/yr. Price bounded away from zero.
 - **Properties**: Extreme daily moves occur ~2–4× more often than GBM
   predicts. Stress-tests stop-loss and position-sizing assumptions.
+
+### paired_cointegrated.csv — co-integrated pair for pairs mean-reversion
+- **Seed**: 42
+- **Generator**: `data/generate_paired.py`
+- **Model**: Two price series (A, B) sharing a common GBM log-price factor
+  plus independent idiosyncratic OU components.
+  - Common factor: sigma_F = 0.20/yr (non-stationary, unit root)
+  - Idiosyncratic OU: sigma_eps = 0.10/yr, theta = 8.75/yr (half-life ≈ 20 bars)
+  - spread = log_A − log_B = eps_A − eps_B (stationary OU)
+- **Columns**: `date, open, high, low, close, volume, close_a, close_b`
+  - `close` = `close_a / close_b` (always positive; log equals the log-spread)
+  - `close_a`, `close_b` — individual price series for inspection/testing
+- **Properties**: The spread is mean-reverting by construction; individual series
+  have unit roots. Designed to test strategy 11 (Pairs Mean-Reversion). The
+  standard four single-asset datasets are not appropriate for this strategy.

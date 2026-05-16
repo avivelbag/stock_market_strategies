@@ -1,0 +1,38 @@
+{
+  "paired_cointegrated": {
+    "cagr": 0.039596,
+    "volatility": 0.092132,
+    "sharpe": 0.46754,
+    "sortino": 0.489347,
+    "calmar": 0.480185,
+    "max_drawdown": -0.082459,
+    "time_in_drawdown": 0.839,
+    "turnover": 0.036,
+    "hit_rate": 0.22022,
+    "tail_ratio": 1.101307,
+    "exposure": 0.414,
+    "deflated_sharpe": 0.823604,
+    "cost_to_alpha_ratio": 5.171286,
+    "sharpe_ci_lower": -0.511482,
+    "sharpe_ci_upper": 1.525701,
+    "sharpe_ci_confidence": 0.95,
+    "regime_sharpe": {
+      "high_vol": 0.906781,
+      "trending": -0.219445,
+      "ranging": 0.991489,
+      "regime_counts": {
+        "high_vol": 277,
+        "trending": 352,
+        "ranging": 371
+      }
+    },
+    "walk_forward": {
+      "oos_sharpe_mean": 0.749035,
+      "oos_sharpe_std": 0.8407,
+      "oos_cagr_mean": 0.048207,
+      "oos_max_drawdown_mean": -0.045926,
+      "oos_consistency": 0.8
+    },
+    "pbo": 0.824786
+  }
+}
