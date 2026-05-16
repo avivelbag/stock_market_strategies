@@ -1,0 +1,12 @@
+{
+  "paired_cointegrated": {
+    "mean_sharpe": 0.451595,
+    "std_sharpe": 0.141775,
+    "min_sharpe": 0.189632,
+    "max_sharpe": 0.781389,
+    "n_trials": 25,
+    "sensitivity_score": 0.313943,
+    "dispersion": 0.141775,
+    "stable_fraction": 0.84
+  }
+}

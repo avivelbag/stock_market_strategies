@@ -97,5 +97,14 @@
     "technique": "backtest / low-volatility anomaly / regime selection / behavioral finance",
     "path": "pieces/10-low-volatility-anomaly",
     "thumbnail": "pieces/10-low-volatility-anomaly/thumbnail.svg"
+  },
+  {
+    "id": "11-pairs-mean-reversion",
+    "title": "Statistical Pairs Mean-Reversion",
+    "tagline": "The library's first multi-asset strategy: trade the co-integration residual — when two prices drift apart beyond 2 standard deviations, bet on reversion to equilibrium.",
+    "year": 2026,
+    "technique": "backtest / pairs trading / co-integration / spread mean-reversion",
+    "path": "pieces/11-pairs-mean-reversion",
+    "thumbnail": "pieces/11-pairs-mean-reversion/thumbnail.svg"
   }
 ]
