@@ -88,5 +88,14 @@
     "technique": "backtest / risk sizing / variance risk premium / position scaling",
     "path": "pieces/09-volatility-managed",
     "thumbnail": "pieces/09-volatility-managed/thumbnail.svg"
+  },
+  {
+    "id": "10-low-volatility-anomaly",
+    "title": "Low-Volatility Anomaly (Time-Series)",
+    "tagline": "Hold during calm: the Baker/Blitz low-vol anomaly adapted as a binary in/out regime selector — lottery demand and leverage constraints, applied bar by bar.",
+    "year": 2026,
+    "technique": "backtest / low-volatility anomaly / regime selection / behavioral finance",
+    "path": "pieces/10-low-volatility-anomaly",
+    "thumbnail": "pieces/10-low-volatility-anomaly/thumbnail.svg"
   }
 ]
