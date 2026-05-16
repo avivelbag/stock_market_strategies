@@ -97,8 +97,10 @@ def _run_internal(
         config: Optional backtest config dict.
 
     Returns:
-        (equity_series, positions_series, risk_free_rate) — all needed by
-        metrics.compute_all() and by metrics.deflated_sharpe().
+        (net_equity_series, gross_equity_series, positions_series, risk_free_rate)
+        where net_equity is the post-cost curve and gross_equity is the zero-cost
+        baseline computed in the same pass from the same position stream. Both are
+        needed by metrics.cost_to_alpha_ratio().
 
     Raises:
         LookAheadError: If the strategy accesses prices beyond the current bar.
@@ -124,6 +126,8 @@ def _run_internal(
 
     equity = np.empty(n, dtype=float)
     equity[0] = initial_capital
+    gross_equity = np.empty(n, dtype=float)
+    gross_equity[0] = initial_capital
     pos_arr = np.zeros(n, dtype=int)
 
     prev_pos = 0
@@ -147,14 +151,16 @@ def _run_internal(
             cost = 0.0
 
         equity[t + 1] = equity[t] * (1.0 + target * bar_return - cost)
+        gross_equity[t + 1] = gross_equity[t] * (1.0 + target * bar_return)
         pos_arr[t] = target
         prev_pos = target
 
     pos_arr[n - 1] = prev_pos
 
     equity_series = pd.Series(equity, index=prices_df.index)
+    gross_equity_series = pd.Series(gross_equity, index=prices_df.index)
     positions_series = pd.Series(pos_arr, index=prices_df.index)
-    return equity_series, positions_series, risk_free_rate
+    return equity_series, gross_equity_series, positions_series, risk_free_rate
 
 
 def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
@@ -197,7 +203,7 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
         LookAheadError: If the strategy accesses prices beyond the current bar.
         ValueError: If prices_df has fewer than 2 rows or missing required columns.
     """
-    equity_series, positions_series, risk_free_rate = _run_internal(
+    equity_series, _gross, positions_series, risk_free_rate = _run_internal(
         strategy_fn, prices_df, config
     )
     result = _metrics.compute_all(equity_series, positions_series, risk_free_rate)

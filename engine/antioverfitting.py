@@ -56,7 +56,7 @@ def run_with_dsr(
     Returns:
         Dict from compute_all() plus key "deflated_sharpe".
     """
-    equity_series, positions_series, risk_free_rate = _backtest._run_internal(
+    equity_series, _gross, positions_series, risk_free_rate = _backtest._run_internal(
         strategy_fn, prices_df, config
     )
     result = _metrics.compute_all(equity_series, positions_series, risk_free_rate)

@@ -391,6 +391,35 @@ def regime_conditional_sharpe(returns: pd.Series, prices: pd.DataFrame) -> dict:
     return result
 
 
+def cost_to_alpha_ratio(gross_equity: pd.Series, net_equity: pd.Series) -> float:
+    """Fraction of gross edge consumed by transaction costs.
+
+    Computes gross_alpha / (gross_alpha - net_alpha) where alpha is CAGR.
+    Returns 1.0 when costs are zero (gross == net). Returns inf when net_alpha
+    is non-positive — all edge is eaten by costs or the strategy loses money net.
+
+    Blind spot: CAGR collapses path information. Two strategies with identical
+    terminal CAGRs can have very different intraperiod cost profiles; this ratio
+    only captures the cumulative endpoint difference.
+
+    Args:
+        gross_equity: Zero-cost equity curve (commission_bps=0, slippage_bps=0).
+        net_equity: Post-cost equity curve (realistic frictions applied).
+
+    Returns:
+        float — 1.0 for zero-cost strategies, inf when net alpha is non-positive,
+        and a value > 1 when there is positive net alpha with some friction.
+    """
+    gross_alpha = cagr(gross_equity)
+    net_alpha = cagr(net_equity)
+    if net_alpha <= 0.0:
+        return float("inf")
+    cost_absorbed = gross_alpha - net_alpha
+    if cost_absorbed == 0.0:
+        return 1.0
+    return float(gross_alpha / cost_absorbed)
+
+
 def compute_all(
     equity: pd.Series,
     positions: pd.Series,

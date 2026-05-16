@@ -211,3 +211,36 @@ Tags: strategies with breakeven below the 5 bps baseline are **cost-fragile**; s
 [**raw performance** — criterion 5 — what changed vs strategy 02] On regime\_switch — the primary evaluation dataset — Bollinger achieves Sharpe 0.36 and CAGR 2.2%.  RSI-2 achieves Sharpe 0.99 and CAGR 11.3%.  The raw performance gap is large: Bollinger's regime\_switch Sharpe is roughly one-third of RSI-2's.  Bollinger compensates with cross-dataset positivity, but the raw magnitude of the edge is meaningfully weaker.  Criterion 5 confirms that Bollinger ranks below RSI-2.
 
 The strategy takes rank 6 as the most recent entrant.  Its defining characteristic is the narrowest cross-dataset Sharpe spread of any strategy (all four datasets between 0.30 and 0.36), reflecting the volatility-normalised nature of the Bollinger Band signal.  The key criteria where it lags RSI-2 are walk-forward consistency on regime\_switch (0.6 vs 1.0) and raw performance magnitude (regime\_switch Sharpe 0.36 vs 0.99).  Compared to the existing library: it is the only strategy to maintain positive Sharpe across all four synthetic datasets, but the magnitude of that edge is thinner than RSI-2 on the primary evaluation dataset.  Its regime profile (HV=1.42 / T=0.52 / R=−0.83 on regime\_switch) reveals a concentration in high-volatility and trending sub-regimes; the ranging Sharpe is negative, meaning the strategy loses money in low-drift, low-volatility environments — a different regime weakness than RSI-2 (which is weakest in pure trending regimes).
+
+---
+
+## Cost-to-Alpha Ratio — gross-edge efficiency metric
+
+[**criterion 2 — robustness** and **criterion 5 — raw performance under costs**]
+
+The cost-to-alpha ratio answers a question no prior metric captures directly: what fraction of gross edge survives realistic transaction friction? The formula is `gross_alpha / (gross_alpha - net_alpha)` where alpha is CAGR, gross is the zero-cost equity curve, and net is the standard 5 bps commission + 5 bps slippage curve. A higher ratio means costs erode less of the gross edge; ratio = 1.0 is the special case for zero cost; ratio → inf when net alpha is zero or negative (all edge consumed). Full values are in each strategy's `metrics.json` under `cost_to_alpha_ratio` (null = net alpha non-positive on that dataset).
+
+**Cost-to-Alpha Ratio on regime\_switch (the primary evaluation dataset):**
+
+| Strategy | Turnover (regime\_switch) | cost\_to\_alpha\_ratio (regime\_switch) | Interpretation |
+|----------|--------------------------|----------------------------------------|----------------|
+| 01 — Dual EMA Momentum | ~0.019 (low) | 18.59 | Costs take ~5% of gross alpha; very low turnover preserves edge |
+| 02 — RSI Mean-Reversion | ~0.060 (moderate) | 6.80 | Costs take ~15% of gross alpha; RSI(2) trades often enough to matter |
+| 03 — Donchian Turtle Breakout | ~0.007 (very low) | 4.08 | Costs take ~25% of gross alpha; moderate impact |
+| 04 — 52-Week High Proximity | null (all datasets) | null | Negative net CAGR on all datasets — costs aggravate an already-losing strategy |
+| 05 — Turn-of-Month Calendar Effect | ~0.093 (high) | 1.88 | Costs take ~47% of gross alpha; calendar trades at fixed month boundaries incur frequent entry/exit costs |
+| 06 — Bollinger Band Mean-Reversion | ~0.093 (high) | 4.23 | Costs take ~24% of gross alpha; despite high turnover, positive gross alpha keeps ratio reasonable |
+
+**Effect on ranking — criterion 2 (robustness) and criterion 5 (raw performance under costs).**
+
+The cost-to-alpha analysis partially revises expectations for high-turnover strategies. The suggestion's pre-analysis predicted Turn-of-Month (05) would have a ratio near 1.0 due to very low turnover (~2.5 round-trips/month), and RSI-2 (02) a ratio of 1.5–3.0. The actual results differ: Turn-of-Month has a ratio of 1.88 (meaning ~47% of its gross alpha on regime\_switch is consumed by costs) while RSI-2 achieves 6.80. The discrepancy for Turn-of-Month arises because its gross CAGR on regime\_switch is only ~4.3%, and 5+5 bps per round-trip × ~12 round-trips/year = ~120 bps/year of cost erodes roughly half of that thin gross edge. RSI-2's higher gross alpha (due to regime\_switch being its native environment) leaves proportionally more room above zero after costs, so its ratio is more favourable despite higher per-trade cost occurrence.
+
+**Effect on relative ranks between high-turnover (02, 05) and low-turnover (01, 03) strategies:**
+
+- [**Dual EMA (01) vs RSI-2 (02)**] On regime\_switch, Dual EMA has a higher ratio (18.59 vs 6.80), meaning costs eat a smaller fraction of its gross alpha. However, its gross alpha itself is weaker — Dual EMA's 9.2% in-sample CAGR is driven by a large gross edge that costs barely touch (low turnover), whereas RSI-2's higher CAGR (11.3% net) represents a richer gross edge consumed at a 15% rate. The ratio favours Dual EMA on efficiency but RSI-2 on absolute magnitude. **No rank change from this metric: walk-forward criterion 4 remains the decisive differentiator, and RSI-2 outperforms Dual EMA on that criterion regardless of cost efficiency.**
+
+- [**Turn-of-Month (05) vs low-turnover strategies (01, 03)**] The 1.88 ratio for Turn-of-Month on regime\_switch is the worst among strategies with positive net CAGR. Its gross edge is thin and half of it vanishes at standard friction levels. Against Dual EMA (ratio 18.59) and Donchian (ratio 4.08), Turn-of-Month is the most cost-sensitive strategy on regime\_switch. This reinforces its rank 5 position — even on the one dataset where it shows positive in-sample returns, realistic costs consume a disproportionate fraction of its already-modest gross edge. On real equity data (where the calendar effect is expected to be real), the gross alpha would be larger and the ratio would improve; the current result reflects the thin signal-to-cost balance on synthetic data.
+
+- [**Bollinger (06) vs RSI-2 (02)**] On regime\_switch, Bollinger's ratio (4.23) is lower than RSI-2 (6.80), consistent with Bollinger's thinner gross alpha at similar trade frequency. This is a criterion 5 disadvantage for Bollinger — not only does it earn lower net CAGR, it also gives up a larger fraction of its gross alpha to costs. **No rank change: Bollinger already ranks below RSI-2 on criteria 2, 4, and 5.**
+
+**Summary.** The cost-to-alpha ratio does not change the current ranking order. It sharpens the picture on criterion 2 by revealing that Dual EMA's low-turnover advantage preserves a high fraction of its gross alpha, while Turn-of-Month's calendar-boundary trading incurs disproportionate cost friction relative to its thin gross edge on synthetic data. RSI-2 remains the strongest strategy on criteria 2, 4, and 5 even under this new lens: its moderate turnover is compensated by its richer gross alpha, leaving it with a more favourable ratio than all other positive-net-alpha strategies on regime\_switch except Dual EMA (which has lower absolute net performance).
