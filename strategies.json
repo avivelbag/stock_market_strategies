@@ -28,5 +28,15 @@
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/03-donchian-turtle-breakout/metrics.json",
     "relates_to": ["01-dual-ema-momentum"]
+  },
+  {
+    "id": "04",
+    "name": "04-52wk-high-proximity",
+    "title": "52-Week High Proximity (Anchoring Bias)",
+    "thesis_tag": "anchoring",
+    "path": "strategies/04-52wk-high-proximity",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/04-52wk-high-proximity/metrics.json",
+    "relates_to": []
   }
 ]

@@ -1,0 +1,86 @@
+{
+  "trend_gbm": {
+    "cagr": -0.060366,
+    "volatility": 0.105467,
+    "sharpe": -0.537381,
+    "sortino": -0.393212,
+    "calmar": -0.169809,
+    "max_drawdown": -0.355497,
+    "time_in_drawdown": 0.703,
+    "turnover": 0.013,
+    "hit_rate": 0.136136,
+    "tail_ratio": 0.825138,
+    "exposure": 0.263,
+    "deflated_sharpe": 0.13898,
+    "walk_forward": {
+      "oos_sharpe_mean": 0.0,
+      "oos_sharpe_std": 0.0,
+      "oos_cagr_mean": 0.0,
+      "oos_max_drawdown_mean": 0.0,
+      "oos_consistency": 0.0
+    }
+  },
+  "mean_rev_ou": {
+    "cagr": -0.037175,
+    "volatility": 0.106204,
+    "sharpe": -0.303637,
+    "sortino": -0.297347,
+    "calmar": -0.186071,
+    "max_drawdown": -0.19979,
+    "time_in_drawdown": 0.691,
+    "turnover": 0.007,
+    "hit_rate": 0.154154,
+    "tail_ratio": 1.04741,
+    "exposure": 0.332,
+    "deflated_sharpe": 0.273069,
+    "walk_forward": {
+      "oos_sharpe_mean": 0.0,
+      "oos_sharpe_std": 0.0,
+      "oos_cagr_mean": 0.0,
+      "oos_max_drawdown_mean": 0.0,
+      "oos_consistency": 0.0
+    }
+  },
+  "regime_switch": {
+    "cagr": -0.016089,
+    "volatility": 0.122193,
+    "sharpe": -0.071671,
+    "sortino": -0.079068,
+    "calmar": -0.048949,
+    "max_drawdown": -0.328694,
+    "time_in_drawdown": 0.738,
+    "turnover": 0.015,
+    "hit_rate": 0.24024,
+    "tail_ratio": 1.026917,
+    "exposure": 0.491,
+    "deflated_sharpe": 0.443286,
+    "walk_forward": {
+      "oos_sharpe_mean": 0.0,
+      "oos_sharpe_std": 0.0,
+      "oos_cagr_mean": 0.0,
+      "oos_max_drawdown_mean": 0.0,
+      "oos_consistency": 0.0
+    }
+  },
+  "fat_tail": {
+    "cagr": -0.01631,
+    "volatility": 0.082494,
+    "sharpe": -0.1578,
+    "sortino": -0.092499,
+    "calmar": -0.093795,
+    "max_drawdown": -0.173888,
+    "time_in_drawdown": 0.48,
+    "turnover": 0.005,
+    "hit_rate": 0.105105,
+    "tail_ratio": 1.079688,
+    "exposure": 0.217,
+    "deflated_sharpe": 0.375544,
+    "walk_forward": {
+      "oos_sharpe_mean": 0.0,
+      "oos_sharpe_std": 0.0,
+      "oos_cagr_mean": 0.0,
+      "oos_max_drawdown_mean": 0.0,
+      "oos_consistency": 0.0
+    }
+  }
+}
