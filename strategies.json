@@ -58,5 +58,15 @@
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/06-bollinger-mean-reversion/metrics.json",
     "relates_to": ["02-rsi-mean-reversion"]
+  },
+  {
+    "id": "07",
+    "name": "07-absolute-momentum",
+    "title": "Absolute Momentum (Trend Filter)",
+    "thesis_tag": "momentum",
+    "path": "strategies/07-absolute-momentum",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/07-absolute-momentum/metrics.json",
+    "relates_to": ["01-dual-ema-momentum", "03-donchian-turtle-breakout"]
   }
 ]
