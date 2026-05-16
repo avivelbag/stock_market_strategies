@@ -19,7 +19,7 @@ unless otherwise noted for a specific cycle.
 
 | Rank | Strategy | Thesis | Robustness | Simplicity | Walk-fwd Sharpe | Raw CAGR |
 |------|----------|--------|------------|------------|-----------------|----------|
-| 1    | [Dual EMA Crossover Momentum](strategies/01-dual-ema-momentum/README.md) | Momentum premium (Jegadeesh & Titman 1993) | Positive on regime_switch and fat_tail; negative on trend_gbm OOS | 2 params | oos_sharpe_mean: −0.29 avg; oos_consistency: 0.35 avg | CAGR: regime_switch 9.2%, others weak |
+| 1    | [Dual EMA Crossover Momentum](strategies/01-dual-ema-momentum/README.md) | Momentum premium (Jegadeesh & Titman 1993) | Positive on regime_switch and fat_tail; negative on trend_gbm and mean_rev_ou OOS | 2 params | oos_sharpe_mean: −0.29 avg; oos_consistency: 0.35 avg | CAGR: regime_switch 9.2%, others weak |
 | 2    | [RSI Mean-Reversion (Connors RSI-2)](strategies/02-rsi-mean-reversion/README.md) | Behavioral overreaction/reversal (De Bondt & Thaler 1985; Jegadeesh 1990) | Positive on 3 of 4 datasets; negative only on trend_gbm | 3 params | oos_sharpe_mean: 0.30 avg; oos_consistency: 0.70 avg | CAGR: regime_switch 11.3%, fat_tail 8.6% |
 
 **Rank 1 — Dual EMA Crossover Momentum**
