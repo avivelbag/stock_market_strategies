@@ -12,6 +12,16 @@
     "tail_ratio": 0.880718,
     "exposure": 0.475,
     "deflated_sharpe": 0.11507,
+    "regime_sharpe": {
+      "high_vol": 0.458529,
+      "trending": -1.189041,
+      "ranging": -0.78345,
+      "regime_counts": {
+        "high_vol": 322,
+        "trending": 384,
+        "ranging": 294
+      }
+    },
     "walk_forward": {
       "oos_sharpe_mean": -0.904332,
       "oos_sharpe_std": 1.014869,
@@ -33,6 +43,16 @@
     "tail_ratio": 1.048935,
     "exposure": 0.508,
     "deflated_sharpe": 0.703054,
+    "regime_sharpe": {
+      "high_vol": 1.33413,
+      "trending": -0.02894,
+      "ranging": -0.004598,
+      "regime_counts": {
+        "high_vol": 247,
+        "trending": 346,
+        "ranging": 407
+      }
+    },
     "walk_forward": {
       "oos_sharpe_mean": -0.023441,
       "oos_sharpe_std": 1.053019,
@@ -54,6 +74,16 @@
     "tail_ratio": 1.109238,
     "exposure": 0.632,
     "deflated_sharpe": 0.914469,
+    "regime_sharpe": {
+      "high_vol": 0.920429,
+      "trending": 0.22572,
+      "ranging": 0.872356,
+      "regime_counts": {
+        "high_vol": 338,
+        "trending": 300,
+        "ranging": 362
+      }
+    },
     "walk_forward": {
       "oos_sharpe_mean": -0.488971,
       "oos_sharpe_std": 0.547274,
@@ -75,6 +105,16 @@
     "tail_ratio": 1.024692,
     "exposure": 0.425,
     "deflated_sharpe": 0.705944,
+    "regime_sharpe": {
+      "high_vol": -0.09288,
+      "trending": -0.567724,
+      "ranging": 0.990521,
+      "regime_counts": {
+        "high_vol": 264,
+        "trending": 325,
+        "ranging": 411
+      }
+    },
     "walk_forward": {
       "oos_sharpe_mean": 0.238264,
       "oos_sharpe_std": 1.105616,

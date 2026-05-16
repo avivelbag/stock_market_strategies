@@ -200,7 +200,11 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
     equity_series, positions_series, risk_free_rate = _run_internal(
         strategy_fn, prices_df, config
     )
-    return _metrics.compute_all(equity_series, positions_series, risk_free_rate)
+    result = _metrics.compute_all(equity_series, positions_series, risk_free_rate)
+    result["regime_sharpe"] = _metrics.regime_conditional_sharpe(
+        equity_series.pct_change(), prices_df
+    )
+    return result
 
 
 def walk_forward_backtest(

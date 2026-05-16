@@ -215,7 +215,7 @@ class TestMetricsMath:
         expected_keys = {
             "cagr", "volatility", "sharpe", "sortino", "calmar",
             "max_drawdown", "time_in_drawdown", "turnover", "hit_rate",
-            "tail_ratio", "exposure",
+            "tail_ratio", "exposure", "regime_sharpe",
         }
         assert expected_keys == set(result.keys())
 
@@ -403,4 +403,18 @@ class TestRankingConsistency:
             for dataset, values in m.items():
                 assert "deflated_sharpe" in values, (
                     f"metrics.json for {name}/{dataset} missing 'deflated_sharpe' field"
+                )
+
+    def test_metrics_json_has_regime_sharpe_field(self):
+        """All four strategies must have regime_sharpe in each dataset entry."""
+        for name in (
+            "01-dual-ema-momentum",
+            "02-rsi-mean-reversion",
+            "03-donchian-turtle-breakout",
+            "04-52wk-high-proximity",
+        ):
+            m = self._load_metrics(name)
+            for dataset, values in m.items():
+                assert "regime_sharpe" in values, (
+                    f"metrics.json for {name}/{dataset} missing 'regime_sharpe' field"
                 )

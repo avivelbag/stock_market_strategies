@@ -4,11 +4,12 @@
 Run from the repo root:
     python3 scripts/regenerate_metrics.py
 
-Produces engine-consistent metrics.json files including the new deflated_sharpe
-field (n_trials=1, conservative lower bound for single-strategy evaluation).
+Produces engine-consistent metrics.json files including the deflated_sharpe
+and regime_sharpe fields.
 """
 import importlib.util
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -37,6 +38,13 @@ def _load_data(name: str) -> pd.DataFrame:
     return pd.read_csv(DATA_DIR / f"{name}.csv", index_col=0, parse_dates=True)
 
 
+def _round_float(v):
+    """Round float to 6 decimal places; convert NaN to None for valid JSON."""
+    if isinstance(v, float):
+        return None if math.isnan(v) else round(v, 6)
+    return v
+
+
 def compute_strategy_metrics(strategy_cls, params: dict) -> dict:
     result = {}
     for dataset in DATASETS:
@@ -47,13 +55,22 @@ def compute_strategy_metrics(strategy_cls, params: dict) -> dict:
         base = em.compute_all(equity_series, positions_series, rfr)
         base["deflated_sharpe"] = compute_dsr(equity_series, n_trials=1)
 
+        rs_raw = em.regime_conditional_sharpe(equity_series.pct_change(), df)
+        rs_clean = {}
+        for k, v in rs_raw.items():
+            if k == "regime_counts":
+                rs_clean[k] = v
+            else:
+                rs_clean[k] = _round_float(v)
+        base["regime_sharpe"] = rs_clean
+
         wf = backtest.walk_forward_backtest(strategy_cls, params, df)
         base["walk_forward"] = wf
 
         # Round to 6 decimal places for stable diffs
-        rounded = {k: round(v, 6) if isinstance(v, float) else v for k, v in base.items()}
+        rounded = {k: _round_float(v) if k not in ("walk_forward", "regime_sharpe") else v for k, v in base.items()}
         rounded["walk_forward"] = {
-            k: round(v, 6) if isinstance(v, float) else v
+            k: _round_float(v)
             for k, v in rounded["walk_forward"].items()
         }
         result[dataset] = rounded
