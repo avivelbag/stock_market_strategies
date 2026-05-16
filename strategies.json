@@ -78,5 +78,15 @@
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/08-nr7-breakout/metrics.json",
     "relates_to": ["03-donchian-turtle-breakout"]
+  },
+  {
+    "id": "09",
+    "name": "09-volatility-managed",
+    "title": "Volatility-Managed Portfolio",
+    "thesis_tag": "risk_premium",
+    "path": "strategies/09-volatility-managed",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/09-volatility-managed/metrics.json",
+    "relates_to": ["07", "08"]
   }
 ]

@@ -170,6 +170,16 @@ def main():
     out08.write_text(json.dumps(metrics08, indent=2) + "\n")
     print(f"Written: {out08}")
 
+    # Strategy 09: Volatility-Managed Portfolio
+    s09_dir = STRATEGIES_DIR / "09-volatility-managed"
+    mod09 = _load_strategy_module(s09_dir, "volmgd_strategy")
+    metrics09 = compute_strategy_metrics(
+        mod09.VolatilityManagedPortfolio, {"window": 21, "target_vol": 0.12}
+    )
+    out09 = s09_dir / "metrics.json"
+    out09.write_text(json.dumps(metrics09, indent=2) + "\n")
+    print(f"Written: {out09}")
+
     print("Done.")
 
 
