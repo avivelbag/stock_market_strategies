@@ -116,3 +116,7 @@ current close to a historical reference close on the same symbol, applying the s
 z-score entry/exit logic. This divergence is deliberate. The Python engine trades the
 true two-leg spread and is the ranking source of truth. The TOS script is useful only
 for directional signal validation on one leg.
+
+**Parameter parity:** `strategy.ts` declares its tunables as `input z_entry = 2.0;`,
+`input z_exit = 0.5;`, and `input window = 60;` — identical snake_case names to
+`strategy.py`. No name mapping is required.
