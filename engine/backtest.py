@@ -83,39 +83,22 @@ class _LookAheadGuardedFrame:
         return self._df.columns
 
 
-def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
-    """Run a vectorized backtest with t→t+1 fill and look-ahead protection.
+def _run_internal(
+    strategy_fn, prices_df: pd.DataFrame, config: dict = None
+) -> tuple:
+    """Core backtest computation shared by run() and antioverfitting helpers.
 
-    Signal semantics:
-        - Signal at bar t (computed from close[t] and earlier) is filled at
-          open[t+1] — the strategy cannot profit from knowing open[t+1] in advance.
-        - The strategy receives ``prices_df.iloc[:t+1]`` wrapped in a guard that
-          raises ``LookAheadError`` if the strategy tries to access bar t+1 or beyond.
-
-    Return model:
-        Open[t+1]-to-close[t+1] returns capture the intraday move from the fill price.
-        equity[t+1] = equity[t] × (1 + position × (close[t+1]−open[t+1])/open[t+1] − cost)
-
-    Cost model:
-        trading_cost = |Δposition| × (commission_frac + slippage_frac)
-        Costs are expressed as a fraction of current portfolio value.
+    Validates inputs, simulates the t→t+1 fill model, and returns the raw
+    equity and position series so callers can apply any metrics they need.
 
     Args:
-        strategy_fn: callable(view: _LookAheadGuardedFrame) → float
-            Receives a guarded view of prices up to and including bar t.
-            Return value: positive = long, negative = short (if allow_short),
-            zero = flat. Any non-zero magnitude is treated as a full position.
-        prices_df: pd.DataFrame with columns [open, high, low, close, volume]
-            and a DatetimeIndex. Must have at least 2 rows.
-        config: dict with optional keys:
-            ``commission_bps`` (int, default 5): one-way commission in basis points.
-            ``slippage_bps`` (int, default 5): half-spread slippage in basis points.
-            ``allow_short`` (bool, default False): allow negative position signals.
-            ``initial_capital`` (float, default 10_000): starting portfolio value.
-            ``risk_free_rate`` (float, default 0.0): annualized risk-free rate.
+        strategy_fn: Strategy callable (same contract as run()).
+        prices_df: OHLCV DataFrame with DatetimeIndex.
+        config: Optional backtest config dict.
 
     Returns:
-        Dict of metric scalars from engine.metrics (see metrics.compute_all).
+        (equity_series, positions_series, risk_free_rate) — all needed by
+        metrics.compute_all() and by metrics.deflated_sharpe().
 
     Raises:
         LookAheadError: If the strategy accesses prices beyond the current bar.
@@ -171,7 +154,52 @@ def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
 
     equity_series = pd.Series(equity, index=prices_df.index)
     positions_series = pd.Series(pos_arr, index=prices_df.index)
+    return equity_series, positions_series, risk_free_rate
 
+
+def run(strategy_fn, prices_df: pd.DataFrame, config: dict = None) -> dict:
+    """Run a vectorized backtest with t→t+1 fill and look-ahead protection.
+
+    Signal semantics:
+        - Signal at bar t (computed from close[t] and earlier) is filled at
+          open[t+1] — the strategy cannot profit from knowing open[t+1] in advance.
+        - The strategy receives ``prices_df.iloc[:t+1]`` wrapped in a guard that
+          raises ``LookAheadError`` if the strategy tries to access bar t+1 or beyond.
+
+    Return model:
+        Open[t+1]-to-close[t+1] returns capture the intraday move from the fill price.
+        equity[t+1] = equity[t] × (1 + position × (close[t+1]−open[t+1])/open[t+1] − cost)
+
+    Cost model:
+        trading_cost = |Δposition| × (commission_frac + slippage_frac)
+        Costs are expressed as a fraction of current portfolio value.
+
+    Args:
+        strategy_fn: callable(view: _LookAheadGuardedFrame) → float
+            Receives a guarded view of prices up to and including bar t.
+            Return value: positive = long, negative = short (if allow_short),
+            zero = flat. Any non-zero magnitude is treated as a full position.
+        prices_df: pd.DataFrame with columns [open, high, low, close, volume]
+            and a DatetimeIndex. Must have at least 2 rows.
+        config: dict with optional keys:
+            ``commission_bps`` (int, default 5): one-way commission in basis points.
+            ``slippage_bps`` (int, default 5): half-spread slippage in basis points.
+            ``allow_short`` (bool, default False): allow negative position signals.
+            ``initial_capital`` (float, default 10_000): starting portfolio value.
+            ``risk_free_rate`` (float, default 0.0): annualized risk-free rate.
+
+    Returns:
+        Dict of metric scalars from engine.metrics (see metrics.compute_all).
+        Does not include deflated_sharpe — use engine.antioverfitting.run_with_dsr
+        for a result that also includes the DSR.
+
+    Raises:
+        LookAheadError: If the strategy accesses prices beyond the current bar.
+        ValueError: If prices_df has fewer than 2 rows or missing required columns.
+    """
+    equity_series, positions_series, risk_free_rate = _run_internal(
+        strategy_fn, prices_df, config
+    )
     return _metrics.compute_all(equity_series, positions_series, risk_free_rate)
 
 

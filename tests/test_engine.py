@@ -1,5 +1,6 @@
 """Tests for engine/backtest.py and engine/metrics.py."""
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -10,6 +11,7 @@ from engine.backtest import LookAheadError, run
 import engine.metrics as metrics
 
 DATA_DIR = Path(__file__).parent.parent / "data"
+ROOT = Path(__file__).parent.parent
 
 
 def _load(name: str) -> pd.DataFrame:
@@ -238,3 +240,167 @@ class TestInputValidation:
         df = _load("trend_gbm.csv").iloc[:2]
         result = run(_always_long, df, {})
         assert isinstance(result, dict)
+
+
+# ---------------------------------------------------------------------------
+# Deflated Sharpe Ratio
+# ---------------------------------------------------------------------------
+
+
+def _make_equity(returns: np.ndarray) -> pd.Series:
+    """Build an equity curve from a daily return array."""
+    equity = 100.0 * np.cumprod(1.0 + returns)
+    return pd.Series(equity)
+
+
+class TestDeflatedSharpe:
+    def test_dsr_n_trials_1_in_unit_interval(self):
+        """deflated_sharpe with n_trials=1 must return a value in [0, 1]."""
+        rng = np.random.default_rng(42)
+        returns = rng.normal(0.001, 0.01, 500)
+        equity = _make_equity(returns)
+        skew, kurt = metrics.sharpe_distribution_stats(equity)
+        dsr = metrics.deflated_sharpe(equity, n_trials=1, skewness=skew, kurtosis=kurt)
+        assert 0.0 <= dsr <= 1.0, f"DSR not in [0, 1]: {dsr}"
+
+    def test_larger_n_trials_strictly_decreases_dsr(self):
+        """Increasing n_trials must strictly decrease DSR for the same equity curve."""
+        rng = np.random.default_rng(7)
+        returns = rng.normal(0.0008, 0.01, 500)
+        equity = _make_equity(returns)
+        skew, kurt = metrics.sharpe_distribution_stats(equity)
+        dsr_1 = metrics.deflated_sharpe(equity, n_trials=1, skewness=skew, kurtosis=kurt)
+        dsr_10 = metrics.deflated_sharpe(equity, n_trials=10, skewness=skew, kurtosis=kurt)
+        dsr_100 = metrics.deflated_sharpe(equity, n_trials=100, skewness=skew, kurtosis=kurt)
+        assert dsr_1 > dsr_10, f"DSR(1)={dsr_1:.4f} should exceed DSR(10)={dsr_10:.4f}"
+        assert dsr_10 > dsr_100, f"DSR(10)={dsr_10:.4f} should exceed DSR(100)={dsr_100:.4f}"
+
+    def test_zero_sharpe_series_returns_dsr_near_zero(self):
+        """A zero-Sharpe series must yield a low DSR after multiple-testing correction."""
+        rng = np.random.default_rng(0)
+        returns = rng.normal(0.0, 0.01, 500)
+        equity = _make_equity(returns)
+        skew, kurt = metrics.sharpe_distribution_stats(equity)
+        dsr = metrics.deflated_sharpe(equity, n_trials=100, skewness=skew, kurtosis=kurt)
+        assert dsr < 0.3, (
+            f"Zero-Sharpe series with n_trials=100 should yield DSR < 0.3; got {dsr:.4f}"
+        )
+
+    def test_dsr_returns_float(self):
+        rng = np.random.default_rng(1)
+        equity = _make_equity(rng.normal(0.001, 0.01, 200))
+        skew, kurt = metrics.sharpe_distribution_stats(equity)
+        dsr = metrics.deflated_sharpe(equity, 1, skew, kurt)
+        assert isinstance(dsr, float)
+
+    def test_sharpe_distribution_stats_returns_normal_defaults_for_short_series(self):
+        """Series with fewer than 4 returns must yield normal-distribution defaults (0, 3)."""
+        equity = pd.Series([100.0, 101.0, 102.0])
+        skew, kurt = metrics.sharpe_distribution_stats(equity)
+        assert skew == 0.0
+        assert kurt == 3.0
+
+    def test_high_sharpe_series_has_dsr_near_one(self):
+        """A consistently positive return series must have DSR close to 1 with n_trials=1."""
+        returns = np.full(500, 0.005)
+        equity = _make_equity(returns)
+        skew, kurt = metrics.sharpe_distribution_stats(equity)
+        dsr = metrics.deflated_sharpe(equity, n_trials=1, skewness=skew, kurtosis=kurt)
+        assert dsr > 0.99, f"High-Sharpe series should have DSR near 1; got {dsr:.4f}"
+
+    def test_negative_sharpe_series_has_dsr_less_than_half(self):
+        """A consistently loss-making series must have DSR below 0.5."""
+        returns = np.full(500, -0.002)
+        equity = _make_equity(returns)
+        skew, kurt = metrics.sharpe_distribution_stats(equity)
+        dsr = metrics.deflated_sharpe(equity, n_trials=1, skewness=skew, kurtosis=kurt)
+        assert dsr < 0.5, f"Negative-Sharpe series should have DSR < 0.5; got {dsr:.4f}"
+
+
+# ---------------------------------------------------------------------------
+# RANKING.md consistency guard
+# ---------------------------------------------------------------------------
+
+
+class TestRankingConsistency:
+    """Guard rail: verify that RANKING.md claims are consistent with metrics.json."""
+
+    def _load_metrics(self, strategy_name: str) -> dict:
+        path = ROOT / "strategies" / strategy_name / "metrics.json"
+        with open(path) as f:
+            return json.load(f)
+
+    def test_strategy01_oos_walk_forward_negative_on_most_datasets(self):
+        """RANKING.md states strategy 01 has negative OOS on 3 of 4 datasets."""
+        m = self._load_metrics("01-dual-ema-momentum")
+        negative_count = sum(
+            1 for ds in m.values()
+            if ds["walk_forward"]["oos_sharpe_mean"] < 0
+        )
+        assert negative_count >= 3, (
+            "RANKING.md claims 01-dual-ema-momentum OOS is negative on 3+ datasets; "
+            f"metrics.json shows only {negative_count}/4 with negative OOS sharpe mean"
+        )
+
+    def test_strategy01_avg_oos_consistency_below_threshold(self):
+        """RANKING.md marks strategy 01 as walk-forward inconsistent (avg oos_consistency < 0.6)."""
+        m = self._load_metrics("01-dual-ema-momentum")
+        avg = sum(ds["walk_forward"]["oos_consistency"] for ds in m.values()) / len(m)
+        assert avg < 0.6, (
+            "RANKING.md marks 01-dual-ema-momentum walk-forward inconsistent; "
+            f"metrics.json shows avg oos_consistency = {avg:.3f}"
+        )
+
+    def test_strategy01_regime_switch_in_sample_sharpe_positive(self):
+        """RANKING.md states strategy 01 has positive in-sample Sharpe on regime_switch."""
+        m = self._load_metrics("01-dual-ema-momentum")
+        assert m["regime_switch"]["sharpe"] > 0, (
+            "RANKING.md claims 01-dual-ema-momentum has positive regime_switch in-sample Sharpe; "
+            f"metrics.json shows {m['regime_switch']['sharpe']:.4f}"
+        )
+
+    def test_strategy01_regime_switch_oos_sharpe_negative(self):
+        """RANKING.md states strategy 01 OOS sharpe on regime_switch is negative."""
+        m = self._load_metrics("01-dual-ema-momentum")
+        wf = m["regime_switch"]["walk_forward"]["oos_sharpe_mean"]
+        assert wf < 0, (
+            "RANKING.md states regime_switch OOS walk-forward is negative for 01-dual-ema-momentum; "
+            f"metrics.json shows oos_sharpe_mean = {wf:.4f}"
+        )
+
+    def test_strategy02_avg_oos_consistency_above_threshold(self):
+        """RANKING.md marks strategy 02 as walk-forward consistent (avg oos_consistency >= 0.6)."""
+        m = self._load_metrics("02-rsi-mean-reversion")
+        avg = sum(ds["walk_forward"]["oos_consistency"] for ds in m.values()) / len(m)
+        assert avg >= 0.6, (
+            "RANKING.md marks 02-rsi-mean-reversion walk-forward consistent; "
+            f"metrics.json shows avg oos_consistency = {avg:.3f}"
+        )
+
+    def test_strategy02_regime_switch_oos_consistency_perfect(self):
+        """RANKING.md states strategy 02 has oos_consistency=1.0 on regime_switch."""
+        m = self._load_metrics("02-rsi-mean-reversion")
+        assert m["regime_switch"]["walk_forward"]["oos_consistency"] == 1.0, (
+            "RANKING.md claims RSI-2 has oos_consistency=1.0 on regime_switch; "
+            f"metrics.json shows {m['regime_switch']['walk_forward']['oos_consistency']}"
+        )
+
+    def test_strategy02_outperforms_strategy01_on_avg_oos_consistency(self):
+        """RANKING.md states strategy 02 beats strategy 01 on walk-forward consistency."""
+        m01 = self._load_metrics("01-dual-ema-momentum")
+        m02 = self._load_metrics("02-rsi-mean-reversion")
+        avg01 = sum(ds["walk_forward"]["oos_consistency"] for ds in m01.values()) / len(m01)
+        avg02 = sum(ds["walk_forward"]["oos_consistency"] for ds in m02.values()) / len(m02)
+        assert avg02 > avg01, (
+            "RANKING.md states RSI-2 outperforms EMA on walk-forward consistency; "
+            f"metrics.json shows avg02={avg02:.3f} vs avg01={avg01:.3f}"
+        )
+
+    def test_metrics_json_has_deflated_sharpe_field(self):
+        """Both strategies must have deflated_sharpe in each dataset entry."""
+        for name in ("01-dual-ema-momentum", "02-rsi-mean-reversion"):
+            m = self._load_metrics(name)
+            for dataset, values in m.items():
+                assert "deflated_sharpe" in values, (
+                    f"metrics.json for {name}/{dataset} missing 'deflated_sharpe' field"
+                )
