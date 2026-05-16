@@ -7,6 +7,10 @@
     "path": "strategies/01-dual-ema-momentum",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/01-dual-ema-momentum/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.3699, "mean_rev_ou": 0.6145,
+      "regime_switch": 0.6004, "fat_tail": 0.5098
+    },
     "relates_to": []
   },
   {
@@ -17,6 +21,10 @@
     "path": "strategies/02-rsi-mean-reversion",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/02-rsi-mean-reversion/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.4116, "mean_rev_ou": 0.8099,
+      "regime_switch": 0.1986, "fat_tail": 0.2063
+    },
     "relates_to": ["01-dual-ema-momentum"]
   },
   {
@@ -27,6 +35,10 @@
     "path": "strategies/03-donchian-turtle-breakout",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/03-donchian-turtle-breakout/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.3787, "mean_rev_ou": 0.2977,
+      "regime_switch": 0.1438, "fat_tail": 0.4470
+    },
     "relates_to": ["01-dual-ema-momentum"]
   },
   {
@@ -37,6 +49,11 @@
     "path": "strategies/04-52wk-high-proximity",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/04-52wk-high-proximity/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.6782, "mean_rev_ou": 0.4253,
+      "regime_switch": 0.6326, "fat_tail": 0.7841,
+      "note": "bootstrap-based (n_trials=6 < 8); reflects return stability, not parameter selection"
+    },
     "relates_to": []
   },
   {
@@ -47,6 +64,11 @@
     "path": "strategies/05-turn-of-month",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/05-turn-of-month/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.8043, "mean_rev_ou": 0.6082,
+      "regime_switch": 0.7791, "fat_tail": 0.3736,
+      "note": "bootstrap-based (n_trials=3 < 8); both parameters are prior-specified — effective trial count is 1, making PBO uninformative for selection overfitting"
+    },
     "relates_to": []
   },
   {
@@ -57,6 +79,10 @@
     "path": "strategies/06-bollinger-mean-reversion",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/06-bollinger-mean-reversion/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.5405, "mean_rev_ou": 0.4850,
+      "regime_switch": 0.3125, "fat_tail": 0.8464
+    },
     "relates_to": ["02-rsi-mean-reversion"]
   },
   {
@@ -67,6 +93,10 @@
     "path": "strategies/07-absolute-momentum",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/07-absolute-momentum/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.2688, "mean_rev_ou": 0.2217,
+      "regime_switch": 0.1193, "fat_tail": 0.1135
+    },
     "relates_to": ["01-dual-ema-momentum", "03-donchian-turtle-breakout"]
   },
   {
@@ -77,6 +107,10 @@
     "path": "strategies/08-nr7-breakout",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/08-nr7-breakout/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.3254, "mean_rev_ou": 0.4511,
+      "regime_switch": 0.2424, "fat_tail": 0.5929
+    },
     "relates_to": ["03-donchian-turtle-breakout"]
   },
   {
@@ -87,6 +121,10 @@
     "path": "strategies/09-volatility-managed",
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/09-volatility-managed/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.4306, "mean_rev_ou": 0.3767,
+      "regime_switch": 0.3431, "fat_tail": 0.2559
+    },
     "relates_to": ["07", "08"]
   }
 ]

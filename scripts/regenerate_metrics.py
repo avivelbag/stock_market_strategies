@@ -8,6 +8,7 @@ Produces engine-consistent metrics.json files including the deflated_sharpe
 and regime_sharpe fields.
 """
 import importlib.util
+import inspect
 import json
 import math
 import sys
@@ -20,10 +21,13 @@ import pandas as pd  # noqa: E402
 from engine import backtest  # noqa: E402
 from engine import metrics as em  # noqa: E402
 from engine.antioverfitting import compute_dsr  # noqa: E402
+from engine.sensitivity import build_param_grid, build_trials_matrix  # noqa: E402
 
 DATA_DIR = ROOT / "data"
 STRATEGIES_DIR = ROOT / "strategies"
 DATASETS = ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"]
+
+_MIN_TRIALS_FOR_SWEEP = 8
 
 
 def _load_strategy_module(strategy_dir: Path, module_name: str):
@@ -47,14 +51,61 @@ def _round_float(v):
     return v
 
 
-def compute_strategy_metrics(strategy_cls, params: dict) -> dict:
+def _find_strategy_class(mod):
+    for name, obj in inspect.getmembers(mod, inspect.isclass):
+        if obj.__module__ == mod.__name__ and callable(obj):
+            return obj
+    raise AttributeError(f"No strategy class found in module {mod.__name__}")
+
+
+def _block_bootstrap_trials(
+    returns,
+    n_trials: int = 16,
+    block_length: int = 21,
+    seed: int = 42,
+):
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    n = len(returns)
+    padded = np.concatenate([returns, returns])
+    result = np.empty((n, n_trials))
+    n_blocks = int(np.ceil(n / block_length))
+    for trial in range(n_trials):
+        starts = rng.integers(0, n, size=n_blocks)
+        bootstrapped = np.concatenate([padded[s: s + block_length] for s in starts])
+        result[:, trial] = bootstrapped[:n]
+    return result
+
+
+def compute_strategy_metrics(strategy_cls, params: dict, strategy_dir: Path = None) -> dict:
     result = {}
+    sensitivity = None
+    param_grid = None
+    if strategy_dir is not None:
+        sens_path = strategy_dir / "sensitivity.json"
+        if sens_path.exists():
+            sensitivity = json.loads(sens_path.read_text())
+            param_grid = build_param_grid(params)
+
+    def factory(p):
+        return strategy_cls(**p)
+
     for dataset in DATASETS:
         df = _load_data(dataset)
         equity_series, gross_equity_series, positions_series, rfr = backtest._run_internal(
             strategy_cls(**params), df
         )
-        base = em.compute_all(equity_series, positions_series, rfr)
+
+        trials_matrix = None
+        if sensitivity is not None and param_grid is not None:
+            n_trials_in_sweep = sensitivity[dataset]["n_trials"]
+            if n_trials_in_sweep >= _MIN_TRIALS_FOR_SWEEP:
+                trials_matrix = build_trials_matrix(factory, param_grid, df)
+            else:
+                returns = equity_series.pct_change().dropna().values
+                trials_matrix = _block_bootstrap_trials(returns)
+
+        base = em.compute_all(equity_series, positions_series, rfr, trials_matrix)
         base["deflated_sharpe"] = compute_dsr(equity_series, n_trials=1)
         base["cost_to_alpha_ratio"] = em.cost_to_alpha_ratio(gross_equity_series, equity_series)
 
@@ -76,7 +127,6 @@ def compute_strategy_metrics(strategy_cls, params: dict) -> dict:
         wf = backtest.walk_forward_backtest(strategy_cls, params, df)
         base["walk_forward"] = wf
 
-        # Round to 6 decimal places for stable diffs
         rounded = {k: _round_float(v) if k not in ("walk_forward", "regime_sharpe") else v for k, v in base.items()}
         rounded["walk_forward"] = {
             k: _round_float(v)
@@ -91,7 +141,7 @@ def main():
     s01_dir = STRATEGIES_DIR / "01-dual-ema-momentum"
     mod01 = _load_strategy_module(s01_dir, "dual_ema_strategy")
     metrics01 = compute_strategy_metrics(
-        mod01.DualEMAMomentum, {"fast_window": 20, "slow_window": 60}
+        mod01.DualEMAMomentum, {"fast_window": 20, "slow_window": 60}, s01_dir
     )
     out01 = s01_dir / "metrics.json"
     out01.write_text(json.dumps(metrics01, indent=2) + "\n")
@@ -103,6 +153,7 @@ def main():
     metrics02 = compute_strategy_metrics(
         mod02.RSIMeanReversion,
         {"rsi_period": 2, "oversold": 10.0, "overbought": 90.0},
+        s02_dir,
     )
     out02 = s02_dir / "metrics.json"
     out02.write_text(json.dumps(metrics02, indent=2) + "\n")
@@ -114,6 +165,7 @@ def main():
     metrics03 = compute_strategy_metrics(
         mod03.DonchianTurtleBreakout,
         {"entry_window": 20, "exit_window": 10, "atr_window": 20},
+        s03_dir,
     )
     out03 = s03_dir / "metrics.json"
     out03.write_text(json.dumps(metrics03, indent=2) + "\n")
@@ -125,6 +177,7 @@ def main():
     metrics04 = compute_strategy_metrics(
         mod04.FiftyTwoWeekHighProximity,
         {"proximity_threshold": 0.95, "exit_threshold": 0.90},
+        s04_dir,
     )
     out04 = s04_dir / "metrics.json"
     out04.write_text(json.dumps(metrics04, indent=2) + "\n")
@@ -134,7 +187,7 @@ def main():
     s05_dir = STRATEGIES_DIR / "05-turn-of-month"
     mod05 = _load_strategy_module(s05_dir, "tom_strategy")
     metrics05 = compute_strategy_metrics(
-        mod05.TurnOfMonth, {"tail_days": 2, "head_days": 3}
+        mod05.TurnOfMonth, {"tail_days": 2, "head_days": 3}, s05_dir
     )
     out05 = s05_dir / "metrics.json"
     out05.write_text(json.dumps(metrics05, indent=2) + "\n")
@@ -144,7 +197,7 @@ def main():
     s06_dir = STRATEGIES_DIR / "06-bollinger-mean-reversion"
     mod06 = _load_strategy_module(s06_dir, "bollinger_strategy")
     metrics06 = compute_strategy_metrics(
-        mod06.BollingerMeanReversion, {"window": 20, "nstd": 2.0, "exit_window": 20}
+        mod06.BollingerMeanReversion, {"window": 20, "nstd": 2.0, "exit_window": 20}, s06_dir
     )
     out06 = s06_dir / "metrics.json"
     out06.write_text(json.dumps(metrics06, indent=2) + "\n")
@@ -154,7 +207,7 @@ def main():
     s07_dir = STRATEGIES_DIR / "07-absolute-momentum"
     mod07 = _load_strategy_module(s07_dir, "abs_mom_strategy")
     metrics07 = compute_strategy_metrics(
-        mod07.AbsoluteMomentum, {"lookback": 252, "threshold": 0.0}
+        mod07.AbsoluteMomentum, {"lookback": 252, "threshold": 0.0}, s07_dir
     )
     out07 = s07_dir / "metrics.json"
     out07.write_text(json.dumps(metrics07, indent=2) + "\n")
@@ -164,7 +217,7 @@ def main():
     s08_dir = STRATEGIES_DIR / "08-nr7-breakout"
     mod08 = _load_strategy_module(s08_dir, "nr7_strategy")
     metrics08 = compute_strategy_metrics(
-        mod08.NR7Breakout, {"n_bars": 7, "exit_bars": 4}
+        mod08.NR7Breakout, {"n_bars": 7, "exit_bars": 4}, s08_dir
     )
     out08 = s08_dir / "metrics.json"
     out08.write_text(json.dumps(metrics08, indent=2) + "\n")
@@ -174,7 +227,7 @@ def main():
     s09_dir = STRATEGIES_DIR / "09-volatility-managed"
     mod09 = _load_strategy_module(s09_dir, "volmgd_strategy")
     metrics09 = compute_strategy_metrics(
-        mod09.VolatilityManagedPortfolio, {"window": 21, "target_vol": 0.12}
+        mod09.VolatilityManagedPortfolio, {"window": 21, "target_vol": 0.12}, s09_dir
     )
     out09 = s09_dir / "metrics.json"
     out09.write_text(json.dumps(metrics09, indent=2) + "\n")

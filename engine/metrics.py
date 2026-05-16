@@ -463,6 +463,7 @@ def compute_all(
     equity: pd.Series,
     positions: pd.Series,
     risk_free_rate: float = 0.0,
+    trials_matrix: np.ndarray = None,
 ) -> dict:
     """Compute all metrics and return as a flat dict.
 
@@ -470,11 +471,16 @@ def compute_all(
         equity: Portfolio value series.
         positions: Position series aligned to equity index.
         risk_free_rate: Annualized risk-free rate as a decimal.
+        trials_matrix: Optional (n_bars × n_trials) array of daily returns from
+            a parameter sweep. When provided, pbo() is called and the result is
+            included under the key "pbo". When None, "pbo" is omitted.
 
     Returns:
         Dict mapping metric name to scalar value.
     """
-    return {
+    from engine.antioverfitting import pbo as _pbo
+
+    result = {
         "cagr": cagr(equity),
         "volatility": volatility(equity),
         "sharpe": sharpe(equity, risk_free_rate),
@@ -487,3 +493,6 @@ def compute_all(
         "tail_ratio": tail_ratio(equity),
         "exposure": exposure(positions),
     }
+    if trials_matrix is not None:
+        result["pbo"] = _pbo(trials_matrix)
+    return result
