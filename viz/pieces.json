@@ -79,5 +79,14 @@
     "technique": "backtest / volatility contraction / NR7 / breakout",
     "path": "pieces/08-nr7-breakout",
     "thumbnail": "pieces/08-nr7-breakout/thumbnail.svg"
+  },
+  {
+    "id": "09-volatility-managed",
+    "title": "Volatility-Managed Portfolio",
+    "tagline": "Scale equity exposure inversely to realized variance: the Moreira & Muir (2017) variance risk premium strategy — the library's first explicit risk-sizing entry.",
+    "year": 2026,
+    "technique": "backtest / risk sizing / variance risk premium / position scaling",
+    "path": "pieces/09-volatility-managed",
+    "thumbnail": "pieces/09-volatility-managed/thumbnail.svg"
   }
 ]
