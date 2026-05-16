@@ -1,0 +1,62 @@
+{
+  "trend_gbm": {
+    "cagr": -0.087301,
+    "sharpe": -0.599249,
+    "max_drawdown": -0.400873,
+    "volatility": 0.136775,
+    "calmar": -0.217777,
+    "sortino": -0.622616,
+    "walk_forward": {
+      "oos_sharpe_mean": -0.904332,
+      "oos_sharpe_std": 1.014869,
+      "oos_cagr_mean": -0.081372,
+      "oos_max_drawdown_mean": -0.125503,
+      "oos_consistency": 0.2
+    }
+  },
+  "mean_rev_ou": {
+    "cagr": 0.028169,
+    "sharpe": 0.267921,
+    "max_drawdown": -0.196143,
+    "volatility": 0.140481,
+    "calmar": 0.143615,
+    "sortino": 0.309781,
+    "walk_forward": {
+      "oos_sharpe_mean": -0.023441,
+      "oos_sharpe_std": 1.053019,
+      "oos_cagr_mean": 0.02614,
+      "oos_max_drawdown_mean": -0.100699,
+      "oos_consistency": 0.4
+    }
+  },
+  "regime_switch": {
+    "cagr": 0.092358,
+    "sharpe": 0.688926,
+    "max_drawdown": -0.264807,
+    "volatility": 0.143095,
+    "calmar": 0.348776,
+    "sortino": 0.87087,
+    "walk_forward": {
+      "oos_sharpe_mean": -0.488971,
+      "oos_sharpe_std": 0.547274,
+      "oos_cagr_mean": -0.050113,
+      "oos_max_drawdown_mean": -0.099168,
+      "oos_consistency": 0.2
+    }
+  },
+  "fat_tail": {
+    "cagr": 0.02619,
+    "sharpe": 0.271203,
+    "max_drawdown": -0.23033,
+    "volatility": 0.123254,
+    "calmar": 0.113706,
+    "sortino": 0.254839,
+    "walk_forward": {
+      "oos_sharpe_mean": 0.238264,
+      "oos_sharpe_std": 1.105616,
+      "oos_cagr_mean": 0.037799,
+      "oos_max_drawdown_mean": -0.07604,
+      "oos_consistency": 0.6
+    }
+  }
+}

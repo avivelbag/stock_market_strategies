@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "01",
+    "name": "01-dual-ema-momentum",
+    "title": "Dual EMA Crossover Momentum",
+    "thesis_tag": "momentum",
+    "path": "strategies/01-dual-ema-momentum",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/01-dual-ema-momentum/metrics.json",
+    "relates_to": []
+  }
+]
