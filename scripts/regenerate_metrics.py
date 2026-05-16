@@ -58,6 +58,12 @@ def compute_strategy_metrics(strategy_cls, params: dict) -> dict:
         base["deflated_sharpe"] = compute_dsr(equity_series, n_trials=1)
         base["cost_to_alpha_ratio"] = em.cost_to_alpha_ratio(gross_equity_series, equity_series)
 
+        daily_returns = equity_series.pct_change().dropna()
+        ci_lo, _ci_pt, ci_hi = em.sharpe_ci(daily_returns)
+        base["sharpe_ci_lower"] = ci_lo
+        base["sharpe_ci_upper"] = ci_hi
+        base["sharpe_ci_confidence"] = 0.95
+
         rs_raw = em.regime_conditional_sharpe(equity_series.pct_change(), df)
         rs_clean = {}
         for k, v in rs_raw.items():

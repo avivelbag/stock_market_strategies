@@ -261,3 +261,41 @@ The cost-to-alpha analysis partially revises expectations for high-turnover stra
 - [**Bollinger (06) vs RSI-2 (02)**] On regime\_switch, Bollinger's ratio (4.23) is lower than RSI-2 (6.80), consistent with Bollinger's thinner gross alpha at similar trade frequency. This is a criterion 5 disadvantage for Bollinger — not only does it earn lower net CAGR, it also gives up a larger fraction of its gross alpha to costs. **No rank change: Bollinger already ranks below RSI-2 on criteria 2, 4, and 5.**
 
 **Summary.** The cost-to-alpha ratio does not change the current ranking order. It sharpens the picture on criterion 2 by revealing that Dual EMA's low-turnover advantage preserves a high fraction of its gross alpha, while Turn-of-Month's calendar-boundary trading incurs disproportionate cost friction relative to its thin gross edge on synthetic data. RSI-2 remains the strongest strategy on criteria 2, 4, and 5 even under this new lens: its moderate turnover is compensated by its richer gross alpha, leaving it with a more favourable ratio than all other positive-net-alpha strategies on regime\_switch except Dual EMA (which has lower absolute net performance).
+
+---
+
+## Bootstrapped Sharpe Confidence Intervals — finite-sample rigor metric
+
+[**criterion 2 — robustness** and **criterion 5 — raw performance statistical significance**]
+
+Every strategy's `metrics.json` now includes `sharpe_ci_lower`, `sharpe_ci_upper`, and `sharpe_ci_confidence` on each dataset. These are 95% percentile bootstrap confidence intervals for the annualised Sharpe ratio, computed from 1000 bootstrap resamples with a fixed seed (deterministic). The blind spot they address: the standard error of a Sharpe ratio is large for finite samples. On ~1000-bar datasets, a "true" Sharpe of zero can produce observed point estimates in the 0.3–0.8 range purely from sampling noise. A CI that excludes zero provides meaningful statistical evidence that the edge is real; a CI that straddles zero means the observed Sharpe is consistent with luck.
+
+**95% CI results on regime\_switch (the primary evaluation dataset):**
+
+| Rank | Strategy | Sharpe (regime\_switch) | 95% CI | Excludes zero? |
+|------|----------|------------------------|--------|----------------|
+| 1    | Dual EMA Momentum          | 0.689  | [−0.213, 1.669] | No — inconclusive |
+| 2    | RSI Mean-Reversion         | 0.986  | [−0.018, 1.972] | No — marginally straddles zero |
+| 3    | Donchian Turtle Breakout   | 0.376  | [−0.606, 1.348] | No — inconclusive |
+| 4    | 52-Week High Proximity     | −0.072 | [−1.010, 0.866] | No — straddles zero |
+| 5    | Turn-of-Month              | 0.289  | [−0.654, 1.276] | No — inconclusive |
+| 6    | Bollinger Mean-Reversion   | 0.360  | [−0.635, 1.314] | No — inconclusive |
+| 7    | Absolute Momentum          | 1.234  | [0.305, 2.213]  | **Yes — strong evidence** |
+
+**Key finding:** Absolute Momentum (strategy 07) is the only strategy whose 95% CI excludes zero on any dataset. Its regime\_switch CI lower bound of 0.305 means there is less than a 2.5% chance the true annualised Sharpe is at or below zero — the strongest statistical signal in the library on this dataset. Every other strategy's CI straddles zero on every dataset, meaning their point-estimate Sharpes are statistically indistinguishable from a lucky draw on 1000-bar synthetic data. RSI Mean-Reversion on regime\_switch comes closest (CI lower = −0.018), but does not clear the zero threshold.
+
+**Effect on ranking:**
+
+The CI evidence does not change the ranking order but meaningfully reweights confidence in each strategy's edge:
+
+- [**Absolute Momentum (rank 7) — criterion 2 and criterion 5**] The CI-excludes-zero result on regime\_switch is a genuine statistical promotion signal. On criterion 2 (robustness), a Sharpe whose CI excludes zero is more defensible than one that straddles zero — it means the performance is unlikely to be sampling noise even at the single-dataset level. However, the other three datasets (trend\_gbm, mean\_rev\_ou, fat\_tail) all have CIs firmly straddling zero, which confirms the strategy's regime-concentration. The CI evidence reinforces the description in the rank 7 narrative: strong confirmed edge in its native trending environment, no statistically distinguishable edge elsewhere. **Rank remains 7** as the most recent entrant with concentrated single-dataset advantage, but the CI result elevates this strategy's criterion 2 and criterion 5 evidence above any other entry on regime\_switch.
+
+- [**RSI Mean-Reversion (rank 2) — criterion 2**] The CI lower of −0.018 on regime\_switch is practically at the zero boundary. With a larger dataset or slightly different random seed realization, this CI would exclude zero. The near-zero lower bound is consistent with RSI-2's strong walk-forward consistency (1.0 on regime\_switch) and suggests its edge is close to but not definitively above the statistical significance threshold at 1000 bars. **No rank change; note added that RSI-2's regime\_switch edge is marginally statistically inconclusive under the 95% bootstrap criterion.**
+
+- [**Dual EMA Momentum (rank 1) — criterion 5**] The CI [−0.213, 1.669] on regime\_switch means the observed Sharpe of 0.689 is well within the range of outcomes consistent with zero edge. This reinforces the in-sample/OOS divergence already flagged under criterion 4 (walk-forward). The CI result does not change rank 1 (which is retained as baseline by convention) but confirms that the in-sample regime\_switch Sharpe provides no statistical guarantee of a real edge.
+
+- [**Bollinger Mean-Reversion (rank 6) — criterion 2**] Despite being the only strategy with positive Sharpe on all four datasets, all four CIs straddle zero (regime\_switch: [−0.635, 1.314]; the others are similar). The cross-dataset consistency is real but the individual CIs confirm that no single dataset provides statistically significant evidence of edge. Bollinger's defining advantage — the narrowest cross-dataset spread — is an argument for robustness at the distributional level, not for statistical significance at the single-dataset level. **No rank change.**
+
+- [**Strategies 3, 4, 5 (Donchian, 52-Week High, Turn-of-Month)**] All CIs straddle zero on all datasets. For strategies 04 and 05 this is already explained by structural mismatches (cross-sectional effect, no institutional flows in synthetic data). For Donchian, the straddling CI on regime\_switch (Sharpe 0.376, CI [−0.606, 1.348]) confirms that its Donchian breakout in-sample result does not rise to statistical significance on 1000 bars. **No rank changes.**
+
+**Summary.** The bootstrapped CI analysis confirms the prevailing ranking while adding a new dimension: statistical evidence of edge above zero. Only Absolute Momentum on regime\_switch crosses the threshold. The broad finding — that most positive Sharpe values on 1000-bar synthetic datasets are statistically indistinguishable from zero — is the expected consequence of the large standard error of Sharpe estimates at moderate sample sizes. Rankings based on point-estimate Sharpe alone should be treated as exploratory; the CI column in the table above is the honest summary of what the data actually supports at 95% confidence.
