@@ -82,6 +82,17 @@ def main():
     out02.write_text(json.dumps(metrics02, indent=2) + "\n")
     print(f"Written: {out02}")
 
+    # Strategy 03: Donchian Turtle Breakout
+    s03_dir = STRATEGIES_DIR / "03-donchian-turtle-breakout"
+    mod03 = _load_strategy_module(s03_dir, "donchian_strategy")
+    metrics03 = compute_strategy_metrics(
+        mod03.DonchianTurtleBreakout,
+        {"entry_window": 20, "exit_window": 10, "atr_window": 20},
+    )
+    out03 = s03_dir / "metrics.json"
+    out03.write_text(json.dumps(metrics03, indent=2) + "\n")
+    print(f"Written: {out03}")
+
     print("Done.")
 
 

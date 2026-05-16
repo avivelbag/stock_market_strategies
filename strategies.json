@@ -18,5 +18,15 @@
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/02-rsi-mean-reversion/metrics.json",
     "relates_to": ["01-dual-ema-momentum"]
+  },
+  {
+    "id": "03",
+    "name": "03-donchian-turtle-breakout",
+    "title": "Donchian Channel Turtle Breakout",
+    "thesis_tag": "momentum",
+    "path": "strategies/03-donchian-turtle-breakout",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/03-donchian-turtle-breakout/metrics.json",
+    "relates_to": ["01-dual-ema-momentum"]
   }
 ]
