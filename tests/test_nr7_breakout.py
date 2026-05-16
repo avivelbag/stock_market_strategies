@@ -26,6 +26,7 @@ ROOT = Path(__file__).parent.parent
 DATA_DIR = ROOT / "data"
 STRATEGY_FILE = ROOT / "strategies" / "08-nr7-breakout" / "strategy.py"
 METRICS_FILE = ROOT / "strategies" / "08-nr7-breakout" / "metrics.json"
+SENSITIVITY_FILE = ROOT / "strategies" / "08-nr7-breakout" / "sensitivity.json"
 
 _DATASETS = ["trend_gbm.csv", "mean_rev_ou.csv", "regime_switch.csv", "fat_tail.csv"]
 
@@ -633,3 +634,69 @@ class TestEdgeCases:
         for t in range(1, n + 1):
             result = s(df.iloc[:t])
             assert result in (-1.0, 0.0, 1.0), f"Invalid signal {result} at bar {t}"
+
+
+# ---------------------------------------------------------------------------
+# sensitivity.json content validation
+# ---------------------------------------------------------------------------
+
+
+class TestSensitivityJson:
+    """Validates that sensitivity.json for strategy 08 contains real sweep results.
+
+    The key failure mode addressed here: the file must not be the degenerate
+    placeholder (n_trials=0, all zeros) that would be committed if the sweep
+    script is never run. All four datasets must have n_trials == 9 (the
+    Cartesian product of n_bars in {6,7,8} and exit_bars in {3,4,5}).
+    """
+
+    def _load(self):
+        with open(SENSITIVITY_FILE) as f:
+            return json.load(f)
+
+    def test_sensitivity_json_exists(self):
+        assert SENSITIVITY_FILE.is_file()
+
+    def test_sensitivity_json_has_all_four_datasets(self):
+        data = self._load()
+        for key in ("trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"):
+            assert key in data, f"sensitivity.json missing key '{key}'"
+
+    def test_n_trials_is_nine_on_all_datasets(self):
+        """The ±20% sweep of n_bars ∈ {6,7,8} and exit_bars ∈ {3,4,5} yields 9 combos."""
+        data = self._load()
+        for dataset, stats in data.items():
+            assert stats["n_trials"] == 9, (
+                f"sensitivity.json '{dataset}' has n_trials={stats['n_trials']}, expected 9; "
+                "file may be the degenerate placeholder — rerun run_sensitivity.py"
+            )
+
+    def test_regime_switch_mean_sharpe_is_positive(self):
+        """regime_switch is the primary dataset where NR7 shows positive edge."""
+        data = self._load()
+        assert data["regime_switch"]["mean_sharpe"] > 0.0, (
+            f"regime_switch mean_sharpe={data['regime_switch']['mean_sharpe']:.4f} "
+            "should be positive across the parameter sweep"
+        )
+
+    def test_sensitivity_scores_are_non_negative_finite(self):
+        data = self._load()
+        for dataset, stats in data.items():
+            score = stats["sensitivity_score"]
+            assert isinstance(score, float), f"sensitivity_score for '{dataset}' is not float"
+            assert score >= 0.0, f"sensitivity_score for '{dataset}' is negative: {score}"
+            assert score < 100.0, f"sensitivity_score for '{dataset}' exceeds cap: {score}"
+
+    def test_live_sweep_matches_committed_n_trials(self):
+        """Run a live sweep on regime_switch and verify n_trials matches the stored value."""
+        from engine.sensitivity import build_param_grid, parameter_sweep
+        spec = importlib.util.spec_from_file_location("nr7_s", STRATEGY_FILE)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        grid = build_param_grid(mod.DEFAULT_PARAMS)
+        df = pd.read_csv(DATA_DIR / "regime_switch.csv", index_col=0, parse_dates=True)
+        result = parameter_sweep(lambda p: mod.NR7Breakout(**p), grid, df)
+        stored = self._load()
+        assert result["n_trials"] == stored["regime_switch"]["n_trials"], (
+            f"Live sweep n_trials={result['n_trials']} != stored={stored['regime_switch']['n_trials']}"
+        )
