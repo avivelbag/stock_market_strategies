@@ -126,5 +126,19 @@
       "regime_switch": 0.3431, "fat_tail": 0.2559
     },
     "relates_to": ["07", "08"]
+  },
+  {
+    "id": "10",
+    "name": "10-low-volatility-anomaly",
+    "title": "Low-Volatility Anomaly (Time-Series)",
+    "thesis_tag": "low_vol_anomaly",
+    "path": "strategies/10-low-volatility-anomaly",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/10-low-volatility-anomaly/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.8225, "mean_rev_ou": 0.5467,
+      "regime_switch": 0.3479, "fat_tail": 0.4458
+    },
+    "relates_to": ["02-rsi-mean-reversion", "07-absolute-momentum", "08-nr7-breakout", "09-volatility-managed"]
   }
 ]

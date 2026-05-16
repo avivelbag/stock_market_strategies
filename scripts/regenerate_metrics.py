@@ -233,6 +233,18 @@ def main():
     out09.write_text(json.dumps(metrics09, indent=2) + "\n")
     print(f"Written: {out09}")
 
+    # Strategy 10: Low-Volatility Anomaly
+    s10_dir = STRATEGIES_DIR / "10-low-volatility-anomaly"
+    mod10 = _load_strategy_module(s10_dir, "lva_strategy")
+    metrics10 = compute_strategy_metrics(
+        mod10.LowVolatilityAnomaly,
+        {"vol_window": 60, "ranking_window": 252, "exit_percentile": 75.0},
+        s10_dir,
+    )
+    out10 = s10_dir / "metrics.json"
+    out10.write_text(json.dumps(metrics10, indent=2) + "\n")
+    print(f"Written: {out10}")
+
     print("Done.")
 
 
