@@ -7,34 +7,47 @@ Run from the repo root:
 For each strategy this script:
   1. Loads the strategy module and reads its DEFAULT_PARAMS dict.
   2. Builds a ±20% parameter grid (5 values per param, deduplicated for integers).
-  3. Runs parameter_sweep on all four synthetic datasets.
-  4. Writes strategies/<name>/sensitivity.json with the per-dataset results.
+  3. Calls sweep_and_score on all four synthetic datasets (seed=42, max_points=25).
+  4. Writes strategies/<name>/sensitivity.json with per-dataset results including
+     the new dispersion and stable_fraction fields.
 
-The output format is::
+Output format per dataset::
 
     {
-      "trend_gbm": {"mean_sharpe": ..., "std_sharpe": ..., ..., "sensitivity_score": ...},
-      "mean_rev_ou": {...},
-      "regime_switch": {...},
-      "fat_tail": {...}
+      "mean_sharpe": ...,
+      "std_sharpe": ...,
+      "min_sharpe": ...,
+      "max_sharpe": ...,
+      "n_trials": ...,
+      "sensitivity_score": ...,
+      "dispersion": ...,
+      "stable_fraction": ...
     }
+
+dispersion equals std_sharpe (both are the population std-dev of the Sharpe
+distribution across grid points).  stable_fraction is the fraction of grid
+points whose Sharpe falls within 0.2 of the centre-point (default-parameter)
+Sharpe.
 """
 import importlib.util
 import json
 import sys
 from pathlib import Path
 
+import numpy as np
+
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
 import pandas as pd  # noqa: E402
 
-from engine.sensitivity import build_param_grid, parameter_sweep  # noqa: E402
+from engine.sensitivity import build_param_grid, sweep_and_score  # noqa: E402
 
 DATA_DIR = ROOT / "data"
 STRATEGIES_DIR = ROOT / "strategies"
 STRATEGIES_JSON = ROOT / "strategies.json"
 DATASETS = ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"]
+_SEED = 42
 
 
 def _load_strategy_module(strategy_dir: Path, module_name: str):
@@ -52,16 +65,39 @@ def _load_data(name: str) -> pd.DataFrame:
 
 
 def _find_strategy_class(mod):
-    """Return the first class defined in the module that has a __call__ method.
-
-    Assumes the strategy module exports exactly one strategy class (the
-    convention followed by all strategies in this repository).
-    """
+    """Return the first class defined in the module that has a __call__ method."""
     import inspect
     for name, obj in inspect.getmembers(mod, inspect.isclass):
         if obj.__module__ == mod.__name__ and callable(obj):
             return obj
     raise AttributeError(f"No strategy class found in module {mod.__name__}")
+
+
+def _stats_from_sharpes(sharpes: list) -> dict:
+    """Compute legacy parameter_sweep-compatible stats from a list of Sharpes."""
+    if not sharpes:
+        return {
+            "mean_sharpe": 0.0,
+            "std_sharpe": 0.0,
+            "min_sharpe": 0.0,
+            "max_sharpe": 0.0,
+            "n_trials": 0,
+            "sensitivity_score": 0.0,
+        }
+    mean_sharpe = float(np.mean(sharpes))
+    std_sharpe = float(np.std(sharpes))
+    if abs(mean_sharpe) < 1e-10:
+        sensitivity_score = 99.0
+    else:
+        sensitivity_score = min(std_sharpe / abs(mean_sharpe), 99.0)
+    return {
+        "mean_sharpe": mean_sharpe,
+        "std_sharpe": std_sharpe,
+        "min_sharpe": float(np.min(sharpes)),
+        "max_sharpe": float(np.max(sharpes)),
+        "n_trials": len(sharpes),
+        "sensitivity_score": sensitivity_score,
+    }
 
 
 def run_strategy_sensitivity(strategy_dir: Path, module_name: str) -> dict:
@@ -72,21 +108,22 @@ def run_strategy_sensitivity(strategy_dir: Path, module_name: str) -> dict:
         module_name: Unique module name used for importlib (avoids collisions).
 
     Returns:
-        Dict mapping dataset name to the parameter_sweep result dict.
+        Dict mapping dataset name to the combined stats dict (legacy fields plus
+        dispersion and stable_fraction).
     """
     mod = _load_strategy_module(strategy_dir, module_name)
     default_params = mod.DEFAULT_PARAMS
     strategy_cls = _find_strategy_class(mod)
     param_grid = build_param_grid(default_params)
 
-    def factory(params):
-        return strategy_cls(**params)
-
     result = {}
     for dataset in DATASETS:
         df = _load_data(dataset)
-        sweep = parameter_sweep(factory, param_grid, df)
-        result[dataset] = {k: round(v, 6) if isinstance(v, float) else v for k, v in sweep.items()}
+        scored = sweep_and_score(strategy_cls, df, param_grid, seed=_SEED)
+        stats = _stats_from_sharpes(scored["sharpes"])
+        stats["dispersion"] = round(scored["dispersion"], 6)
+        stats["stable_fraction"] = round(scored["stable_fraction"], 6)
+        result[dataset] = {k: round(v, 6) if isinstance(v, float) else v for k, v in stats.items()}
 
     return result
 
@@ -111,7 +148,9 @@ def main():
         for dataset, stats in sensitivity.items():
             score = stats.get("sensitivity_score", "?")
             n = stats.get("n_trials", "?")
-            print(f"    {dataset}: score={score:.4f}, n_trials={n}")
+            disp = stats.get("dispersion", "?")
+            sf = stats.get("stable_fraction", "?")
+            print(f"    {dataset}: score={score:.4f}, n={n}, dispersion={disp:.4f}, stable_fraction={sf:.4f}")
 
     print("Done.")
 

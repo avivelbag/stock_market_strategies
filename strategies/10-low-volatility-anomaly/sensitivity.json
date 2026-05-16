@@ -1,34 +1,42 @@
 {
   "trend_gbm": {
-    "mean_sharpe": 0.084921,
-    "std_sharpe": 0.196511,
+    "mean_sharpe": 0.137093,
+    "std_sharpe": 0.222887,
     "min_sharpe": -0.381924,
-    "max_sharpe": 0.412517,
-    "n_trials": 125,
-    "sensitivity_score": 2.31406
+    "max_sharpe": 0.404224,
+    "n_trials": 25,
+    "sensitivity_score": 1.625814,
+    "dispersion": 0.222887,
+    "stable_fraction": 0.72
   },
   "mean_rev_ou": {
-    "mean_sharpe": -0.093126,
-    "std_sharpe": 0.117865,
-    "min_sharpe": -0.351873,
-    "max_sharpe": 0.217249,
-    "n_trials": 125,
-    "sensitivity_score": 1.265643
+    "mean_sharpe": -0.078012,
+    "std_sharpe": 0.085849,
+    "min_sharpe": -0.263572,
+    "max_sharpe": 0.091815,
+    "n_trials": 25,
+    "sensitivity_score": 1.100464,
+    "dispersion": 0.085849,
+    "stable_fraction": 0.92
   },
   "regime_switch": {
-    "mean_sharpe": 0.182746,
-    "std_sharpe": 0.207834,
-    "min_sharpe": -0.148189,
-    "max_sharpe": 0.779612,
-    "n_trials": 125,
-    "sensitivity_score": 1.137285
+    "mean_sharpe": 0.128553,
+    "std_sharpe": 0.149318,
+    "min_sharpe": -0.069299,
+    "max_sharpe": 0.462356,
+    "n_trials": 25,
+    "sensitivity_score": 1.161529,
+    "dispersion": 0.149318,
+    "stable_fraction": 0.64
   },
   "fat_tail": {
-    "mean_sharpe": 0.372705,
-    "std_sharpe": 0.13738,
-    "min_sharpe": 0.05983,
-    "max_sharpe": 0.741077,
-    "n_trials": 125,
-    "sensitivity_score": 0.368601
+    "mean_sharpe": 0.379842,
+    "std_sharpe": 0.120785,
+    "min_sharpe": 0.192152,
+    "max_sharpe": 0.690886,
+    "n_trials": 25,
+    "sensitivity_score": 0.317988,
+    "dispersion": 0.120785,
+    "stable_fraction": 0.84
   }
 }

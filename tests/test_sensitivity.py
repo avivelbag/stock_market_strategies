@@ -77,7 +77,10 @@ class TestSensitivityJsonPresence:
 
     def test_sensitivity_json_has_required_keys(self):
         """Each per-dataset entry in sensitivity.json must have all expected keys."""
-        required = {"mean_sharpe", "std_sharpe", "min_sharpe", "max_sharpe", "n_trials", "sensitivity_score"}
+        required = {
+            "mean_sharpe", "std_sharpe", "min_sharpe", "max_sharpe",
+            "n_trials", "sensitivity_score", "dispersion", "stable_fraction",
+        }
         with open(STRATEGIES_JSON) as f:
             registry = json.load(f)
         for entry in registry:

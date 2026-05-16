@@ -145,6 +145,125 @@ def parameter_sweep(
     }
 
 
+def sweep_and_score(
+    strategy_cls,
+    data: pd.DataFrame,
+    param_grid: dict,
+    seed: int,
+    max_points: int = 25,
+    tolerance: float = 0.2,
+) -> dict:
+    """Run a capped parameter sweep and compute formal dispersion metrics.
+
+    Iterates over the Cartesian product of param_grid values, capping at
+    max_points by randomly sampling when the full product exceeds that limit.
+    The centre point — the combination of middle-index values in each parameter
+    list — is always included in the sample so that stable_fraction has a
+    meaningful reference Sharpe.
+
+    dispersion is the population standard deviation of Sharpe ratios across all
+    sampled grid points (computed via
+    ``engine.metrics.parameter_sensitivity_dispersion``).  stable_fraction is
+    the fraction of sampled grid points whose Sharpe is within tolerance of the
+    centre-point Sharpe — a complementary robustness signal that does not depend
+    on variance magnitude and is resistant to high-mean inflation of the
+    sensitivity score.
+
+    Args:
+        strategy_cls: Strategy class whose constructor accepts keyword arguments
+            matching the keys of param_grid.  Instantiated as
+            ``strategy_cls(**params)`` for each combination.
+        data: OHLCV DataFrame with DatetimeIndex; passed verbatim to
+            engine.backtest.run for each combination.
+        param_grid: Dict mapping parameter names to lists of candidate values.
+            The centre point is derived by taking each list's middle index
+            (``values[len(values) // 2]``), matching the convention in
+            build_param_grid where multiplier=1.0 lands at index 2 of a 5-value
+            list.
+        seed: RNG seed for reproducible sub-sampling when the Cartesian product
+            has more than max_points entries.  Uses numpy.random.default_rng.
+        max_points: Maximum number of grid points to evaluate.  When the full
+            Cartesian product exceeds this, the centre point is preserved and
+            the remaining budget is filled by a reproducible random sample from
+            the non-centre combinations.  Defaults to 25.
+        tolerance: Sharpe band around the centre-point Sharpe used to compute
+            stable_fraction.  A grid point is "stable" if
+            ``|sharpe - centre_sharpe| <= tolerance``.  Defaults to 0.2.
+
+    Returns:
+        Dict with keys:
+            ``param_grid``: the input param_grid, passed through for reference.
+            ``sharpes``: list of valid Sharpe floats, one per successful run,
+                in evaluation order.
+            ``dispersion``: population std-dev of sharpes (0.0 when fewer than
+                2 valid runs).
+            ``stable_fraction``: fraction of sharpes within tolerance of the
+                centre-point Sharpe.  Falls back to comparing against the mean
+                Sharpe when the centre-point run fails.  Returns 0.0 when no
+                runs succeed.
+    """
+    from engine.metrics import parameter_sensitivity_dispersion
+
+    keys = list(param_grid.keys())
+    values_lists = list(param_grid.values())
+
+    all_combos = list(itertools.product(*values_lists))
+
+    center_combo = (
+        tuple(v[len(v) // 2] for v in values_lists) if values_lists else ()
+    )
+
+    rng = np.random.default_rng(seed)
+    if len(all_combos) > max_points:
+        center_in_all = center_combo in all_combos
+        others = [c for c in all_combos if c != center_combo]
+        n_sample = max_points - (1 if center_in_all else 0)
+        n_sample = min(n_sample, len(others))
+        indices = sorted(rng.choice(len(others), size=n_sample, replace=False).tolist())
+        sampled_others = [others[i] for i in indices]
+        combos = ([center_combo] if center_in_all else []) + sampled_others
+    else:
+        combos = list(all_combos)
+
+    sharpes: list = []
+    center_sharpe = None
+    for combo in combos:
+        params = dict(zip(keys, combo))
+        try:
+            strategy = strategy_cls(**params)
+        except (ValueError, TypeError):
+            continue
+        try:
+            result = run(strategy, data)
+            s = result["sharpe"]
+            sharpes.append(s)
+            if combo == center_combo and center_sharpe is None:
+                center_sharpe = s
+        except Exception:
+            continue
+
+    if not sharpes:
+        return {
+            "param_grid": param_grid,
+            "sharpes": [],
+            "dispersion": 0.0,
+            "stable_fraction": 0.0,
+        }
+
+    dispersion = parameter_sensitivity_dispersion(sharpes)
+
+    ref = center_sharpe if center_sharpe is not None else float(np.mean(sharpes))
+    stable_count = sum(1 for s in sharpes if abs(s - ref) <= tolerance)
+    stable_fraction = float(stable_count / len(sharpes))
+
+    return {
+        "param_grid": param_grid,
+        "sharpes": sharpes,
+        "dispersion": dispersion,
+        "stable_fraction": stable_fraction,
+    }
+
+
 def build_trials_matrix(
     strategy_factory: Callable,
     param_grid: dict,
