@@ -93,6 +93,17 @@ def main():
     out03.write_text(json.dumps(metrics03, indent=2) + "\n")
     print(f"Written: {out03}")
 
+    # Strategy 04: 52-Week High Proximity
+    s04_dir = STRATEGIES_DIR / "04-52wk-high-proximity"
+    mod04 = _load_strategy_module(s04_dir, "proximity_strategy")
+    metrics04 = compute_strategy_metrics(
+        mod04.FiftyTwoWeekHighProximity,
+        {"proximity_threshold": 0.95, "exit_threshold": 0.90},
+    )
+    out04 = s04_dir / "metrics.json"
+    out04.write_text(json.dumps(metrics04, indent=2) + "\n")
+    print(f"Written: {out04}")
+
     print("Done.")
 
 
