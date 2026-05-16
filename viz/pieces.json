@@ -70,5 +70,14 @@
     "technique": "backtest / momentum / absolute momentum / trend filter",
     "path": "pieces/07-absolute-momentum",
     "thumbnail": "pieces/07-absolute-momentum/thumbnail.svg"
+  },
+  {
+    "id": "08-nr7-breakout",
+    "title": "NR7 Volatility-Contraction Breakout",
+    "tagline": "When the 7-bar range is at its narrowest, accumulated stops cascade: the Crabel (1990) volatility-cycle thesis applied across four synthetic regimes.",
+    "year": 2026,
+    "technique": "backtest / volatility contraction / NR7 / breakout",
+    "path": "pieces/08-nr7-breakout",
+    "thumbnail": "pieces/08-nr7-breakout/thumbnail.svg"
   }
 ]

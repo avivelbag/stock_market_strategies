@@ -160,6 +160,16 @@ def main():
     out07.write_text(json.dumps(metrics07, indent=2) + "\n")
     print(f"Written: {out07}")
 
+    # Strategy 08: NR7 Volatility-Contraction Breakout
+    s08_dir = STRATEGIES_DIR / "08-nr7-breakout"
+    mod08 = _load_strategy_module(s08_dir, "nr7_strategy")
+    metrics08 = compute_strategy_metrics(
+        mod08.NR7Breakout, {"n_bars": 7, "exit_bars": 4}
+    )
+    out08 = s08_dir / "metrics.json"
+    out08.write_text(json.dumps(metrics08, indent=2) + "\n")
+    print(f"Written: {out08}")
+
     print("Done.")
 
 

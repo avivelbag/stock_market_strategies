@@ -68,5 +68,15 @@
     "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
     "metrics": "strategies/07-absolute-momentum/metrics.json",
     "relates_to": ["01-dual-ema-momentum", "03-donchian-turtle-breakout"]
+  },
+  {
+    "id": "08",
+    "name": "08-nr7-breakout",
+    "title": "NR7 Volatility-Contraction Breakout",
+    "thesis_tag": "volatility_contraction",
+    "path": "strategies/08-nr7-breakout",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/08-nr7-breakout/metrics.json",
+    "relates_to": ["03-donchian-turtle-breakout"]
   }
 ]
