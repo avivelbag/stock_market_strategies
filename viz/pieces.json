@@ -106,5 +106,14 @@
     "technique": "backtest / pairs trading / co-integration / spread mean-reversion",
     "path": "pieces/11-pairs-mean-reversion",
     "thumbnail": "pieces/11-pairs-mean-reversion/thumbnail.svg"
+  },
+  {
+    "id": "12-vol-conditioned-rsi",
+    "title": "Volatility-Conditioned RSI Mean-Reversion",
+    "tagline": "RSI-2 entries gated by a top-quartile vol filter: testing whether overreaction is larger in high-vol regimes — and finding the short side loses.",
+    "year": 2026,
+    "technique": "backtest / mean reversion / RSI(2) / volatility regime / entry filter",
+    "path": "pieces/12-vol-conditioned-rsi",
+    "thumbnail": "pieces/12-vol-conditioned-rsi/thumbnail.svg"
   }
 ]
