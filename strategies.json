@@ -158,5 +158,22 @@
       "note": "bootstrap-based (block bootstrap, n_trials=16). trend_gbm/mean_rev_ou/regime_switch/fat_tail values are schema-compliance entries — strategy is designed for co-integrated paired data, not single-series. paired_cointegrated is the informative value."
     },
     "relates_to": ["02-rsi-mean-reversion", "06-bollinger-mean-reversion"]
+  },
+  {
+    "id": "12",
+    "name": "12-vol-conditioned-rsi",
+    "title": "Volatility-Conditioned RSI Mean-Reversion",
+    "thesis_tag": "mean_reversion",
+    "path": "strategies/12-vol-conditioned-rsi",
+    "datasets": ["trend_gbm", "mean_rev_ou", "regime_switch", "fat_tail"],
+    "metrics": "strategies/12-vol-conditioned-rsi/metrics.json",
+    "pbo": {
+      "trend_gbm": 0.398601,
+      "mean_rev_ou": 0.524709,
+      "regime_switch": 0.692852,
+      "fat_tail": 0.526962,
+      "note": "bootstrap-based (block bootstrap, n_trials=16); all datasets show negative in-sample Sharpe, so PBO near 0.5 reflects return instability, not parameter selection. vol_threshold is the single free parameter — effective trial count is 1, making PBO uninformative for selection bias."
+    },
+    "relates_to": ["02-rsi-mean-reversion", "09-volatility-managed", "10-low-volatility-anomaly"]
   }
 ]
