@@ -106,24 +106,39 @@ reversion.
 ## TOS implementation note
 
 ThinkorSwim has no built-in `PercentRank` function for arbitrary indicator
-series. The Python rolling percentile rank is approximated in `strategy.ts` as:
+series, and the naive `Sum(volRaw < volRaw[0], n)` approach does **not** work
+in thinkScript. Inside `Sum(expr, n)`, thinkScript evaluates `expr` at offsets
+0 through n−1, shifting **all** references including `[0]`. So
+`volRaw < volRaw[0]` at iteration offset `i` becomes `volRaw[i] < volRaw[i]`,
+which is always false. The result is a vol filter that never fires and silently
+disables all entries — a fundamental thinkScript limitation, not a data issue.
+
+`strategy.ts` instead uses a **min-max range normalization**:
 
 ```thinkscript
-def volRank = Sum(volRaw < volRaw[0], volLookback) / volLookback;
+def volHigh = Highest(volRaw, volLookback);
+def volLow  = Lowest(volRaw, volLookback);
+def volRank = if volHigh != volLow
+              then (volRaw - volLow) / (volHigh - volLow)
+              else 0.5;
+def highVol = volRank >= volThreshold;
 ```
 
-This counts how many of the past `volLookback` bars had vol below the current
-bar's vol. The Python implementation uses inclusive equality (`<=`) and matches
-the `pd.Series.rolling().rank(pct=True)` result closely, but small numerical
-differences are expected from:
+`volRank` = 0.0 when current vol is at its `volLookback`-bar minimum; 1.0 when
+at its maximum. With `volThreshold=0.75`, `highVol` fires when realized vol is
+in the top 25% of its historical **range** — conceptually similar to
+top-quartile of the distribution but not identical. The two measures agree when
+vol is uniformly distributed over the window; they diverge when vol is skewed
+(e.g., a single spike dominates the maximum, compressing all other bars toward
+zero range-rank while their count-based percentile rank varies normally).
 
-1. TOS `Sum()` uses strict `<` (Python uses `<=` with average-method tie
-   handling), shifting the rank by at most `1 / volLookback` (≈ 0.004).
-2. TOS and Python may differ slightly in how they handle the initial warm-up
-   bars.
-
-These differences are not defects — they are inherent to approximating a
-percentile rank in a language without native rolling rank support.
+**Divergence from Python**: The Python implementation uses
+`pd.Series.rolling(vol_lookback).rank(pct=True)` — a count-based percentile
+rank (fraction of historical values ≤ current value). The TOS min-max rank is a
+monotone transformation of vol magnitude, not a fractional count. The filter
+activates in broadly similar high-vol regimes in practice, but will differ on
+specific bars when the vol distribution is skewed. This divergence is inherent
+to the language constraint and is documented here rather than hidden.
 
 ## Warm-up
 

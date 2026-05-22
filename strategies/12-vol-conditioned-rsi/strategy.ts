@@ -4,12 +4,28 @@
 # of its trailing 252-bar distribution.
 #
 # TOS approximation note: ThinkorSwim has no PercentRank function for arbitrary
-# indicator series. The percentile rank of current vol within its trailing window
-# is approximated as:
-#   volRank = Sum(volRaw < volRaw[0], volLookback) / volLookback
-# This counts how many of the past volLookback bars had vol below the current
-# bar's vol. Small numerical differences from the Python rolling rank (which uses
-# inclusive equality and average-method ties) are expected and not a defect.
+# indicator series, and the Sum() approach Sum(volRaw < volRaw[0], n) does NOT
+# work in thinkScript — inside Sum, every reference (including [0]) is shifted
+# by the iteration offset, so volRaw[0] evaluates to volRaw at each offset
+# (i.e., the comparison is always volRaw[i] < volRaw[i] = false). This is a
+# fundamental thinkScript limitation: there is no way to "freeze" the current
+# bar's value inside a Sum.
+#
+# WORKAROUND USED HERE: min-max range normalization via Highest/Lowest.
+#   volRank = (volRaw - Lowest(volRaw, n)) / (Highest(volRaw, n) - Lowest(volRaw, n))
+# This gives 0.0 when vol is at its window minimum, 1.0 at its window maximum.
+# At volThreshold=0.75, highVol fires when vol is in the top 25% of its
+# historical RANGE — conceptually similar to top-quartile of DISTRIBUTION but
+# not identical (the distribution approximation differs when vol is skewed).
+#
+# DIVERGENCE FROM PYTHON: the Python implementation uses
+# pd.Series.rolling(vol_lookback).rank(pct=True), which is a count-based
+# percentile rank (fraction of historical values <= current value). The TOS
+# min-max rank is a monotone transform of the true percentile rank but will
+# differ numerically. The filter activates in similar regimes in practice but
+# may fire on a slightly different set of bars. This is not a defect — it is
+# an inherent limitation of approximating a count-based rank in a language
+# without native rolling rank support.
 #
 # Signal fill model: open[-1] = next-bar open, matching the Python engine's
 # open[t+1] fill model (signal at t filled at open[t+1]).
@@ -28,8 +44,12 @@ input rsiExitShort = 30;
 def dailyReturn = close / close[1] - 1;
 def volRaw = StdDev(dailyReturn, volWindow) * Sqrt(252);
 
-# Manual percentile rank: fraction of past volLookback bars with vol < current vol
-def volRank = Sum(volRaw < volRaw[0], volLookback) / volLookback;
+# Min-max range normalization: 0.0 = window minimum, 1.0 = window maximum.
+# This is a working approximation for the Python count-based percentile rank.
+# See header note for why Sum(volRaw < volRaw[0], n) cannot be used in thinkScript.
+def volHigh = Highest(volRaw, volLookback);
+def volLow = Lowest(volRaw, volLookback);
+def volRank = if volHigh != volLow then (volRaw - volLow) / (volHigh - volLow) else 0.5;
 def highVol = volRank >= volThreshold;
 
 def rsiValue = RSI(Length = rsiWindow);
