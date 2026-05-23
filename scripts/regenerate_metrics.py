@@ -108,7 +108,9 @@ def compute_strategy_metrics(
         if sensitivity is not None and param_grid is not None and dataset in sensitivity:
             n_trials_in_sweep = sensitivity[dataset]["n_trials"]
             if n_trials_in_sweep >= _MIN_TRIALS_FOR_SWEEP:
-                trials_matrix = build_trials_matrix(factory, param_grid, df)
+                trials_matrix = build_trials_matrix(
+                    factory, param_grid, df, engine_kwargs=backtest_config or {}
+                )
             else:
                 returns = equity_series.pct_change().dropna().values
                 trials_matrix = _block_bootstrap_trials(returns)

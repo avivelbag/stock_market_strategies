@@ -250,7 +250,7 @@ class TestComputeAllIntegration:
         result = em.compute_all(equity, positions)
         direct = em.martin_ratio(equity)
         if math.isnan(direct):
-            assert result["martin_ratio"] is None or math.isnan(result["martin_ratio"])
+            assert math.isnan(result["martin_ratio"])
         else:
             assert result["martin_ratio"] == pytest.approx(direct, rel=1e-9)
 
