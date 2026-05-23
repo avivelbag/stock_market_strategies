@@ -7,10 +7,13 @@
     "calmar": 0.480185,
     "max_drawdown": -0.082459,
     "time_in_drawdown": 0.839,
+    "ulcer_index": 2.412498,
+    "martin_ratio": 1.639604,
     "turnover": 0.036,
     "hit_rate": 0.22022,
     "tail_ratio": 1.101307,
     "exposure": 0.414,
+    "pbo": 0.228283,
     "deflated_sharpe": 0.823604,
     "cost_to_alpha_ratio": 5.171286,
     "sharpe_ci_lower": -0.511482,
@@ -32,7 +35,6 @@
       "oos_cagr_mean": 0.048207,
       "oos_max_drawdown_mean": -0.045926,
       "oos_consistency": 0.8
-    },
-    "pbo": 0.824786
+    }
   }
 }

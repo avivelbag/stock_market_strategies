@@ -214,8 +214,8 @@ class TestMetricsMath:
         result = run(_always_long, df, {})
         expected_keys = {
             "cagr", "volatility", "sharpe", "sortino", "calmar",
-            "max_drawdown", "time_in_drawdown", "turnover", "hit_rate",
-            "tail_ratio", "exposure", "regime_sharpe",
+            "max_drawdown", "time_in_drawdown", "ulcer_index", "martin_ratio",
+            "turnover", "hit_rate", "tail_ratio", "exposure", "regime_sharpe",
         }
         assert expected_keys == set(result.keys())
 

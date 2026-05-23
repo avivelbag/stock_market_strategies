@@ -7,10 +7,13 @@
     "calmar": -0.169809,
     "max_drawdown": -0.355497,
     "time_in_drawdown": 0.703,
+    "ulcer_index": 21.33022,
+    "martin_ratio": -0.282735,
     "turnover": 0.013,
     "hit_rate": 0.136136,
     "tail_ratio": 0.825138,
     "exposure": 0.263,
+    "pbo": 0.678166,
     "deflated_sharpe": 0.13898,
     "cost_to_alpha_ratio": null,
     "sharpe_ci_lower": -1.482979,
@@ -32,8 +35,7 @@
       "oos_cagr_mean": 0.0,
       "oos_max_drawdown_mean": 0.0,
       "oos_consistency": 0.0
-    },
-    "pbo": 0.678166
+    }
   },
   "mean_rev_ou": {
     "cagr": -0.037175,
@@ -43,10 +45,13 @@
     "calmar": -0.186071,
     "max_drawdown": -0.19979,
     "time_in_drawdown": 0.691,
+    "ulcer_index": 11.221111,
+    "martin_ratio": -0.330971,
     "turnover": 0.007,
     "hit_rate": 0.154154,
     "tail_ratio": 1.04741,
     "exposure": 0.332,
+    "pbo": 0.425253,
     "deflated_sharpe": 0.273069,
     "cost_to_alpha_ratio": null,
     "sharpe_ci_lower": -1.29106,
@@ -68,8 +73,7 @@
       "oos_cagr_mean": 0.0,
       "oos_max_drawdown_mean": 0.0,
       "oos_consistency": 0.0
-    },
-    "pbo": 0.425253
+    }
   },
   "regime_switch": {
     "cagr": -0.016089,
@@ -79,10 +83,13 @@
     "calmar": -0.048949,
     "max_drawdown": -0.328694,
     "time_in_drawdown": 0.738,
+    "ulcer_index": 18.673409,
+    "martin_ratio": -0.086075,
     "turnover": 0.015,
     "hit_rate": 0.24024,
     "tail_ratio": 1.026917,
     "exposure": 0.491,
+    "pbo": 0.632634,
     "deflated_sharpe": 0.443286,
     "cost_to_alpha_ratio": null,
     "sharpe_ci_lower": -1.009534,
@@ -104,8 +111,7 @@
       "oos_cagr_mean": 0.0,
       "oos_max_drawdown_mean": 0.0,
       "oos_consistency": 0.0
-    },
-    "pbo": 0.632634
+    }
   },
   "fat_tail": {
     "cagr": -0.01631,
@@ -115,10 +121,13 @@
     "calmar": -0.093795,
     "max_drawdown": -0.173888,
     "time_in_drawdown": 0.48,
+    "ulcer_index": 9.592423,
+    "martin_ratio": -0.169859,
     "turnover": 0.005,
     "hit_rate": 0.105105,
     "tail_ratio": 1.079688,
     "exposure": 0.217,
+    "pbo": 0.784071,
     "deflated_sharpe": 0.375544,
     "cost_to_alpha_ratio": null,
     "sharpe_ci_lower": -1.046819,
@@ -140,7 +149,6 @@
       "oos_cagr_mean": 0.0,
       "oos_max_drawdown_mean": 0.0,
       "oos_consistency": 0.0
-    },
-    "pbo": 0.784071
+    }
   }
 }
