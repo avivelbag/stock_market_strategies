@@ -77,7 +77,13 @@ def _block_bootstrap_trials(
     return result
 
 
-def compute_strategy_metrics(strategy_cls, params: dict, strategy_dir: Path = None) -> dict:
+def compute_strategy_metrics(
+    strategy_cls,
+    params: dict,
+    strategy_dir: Path = None,
+    datasets: list = None,
+    backtest_config: dict = None,
+) -> dict:
     result = {}
     sensitivity = None
     param_grid = None
@@ -87,20 +93,24 @@ def compute_strategy_metrics(strategy_cls, params: dict, strategy_dir: Path = No
             sensitivity = json.loads(sens_path.read_text())
             param_grid = build_param_grid(params)
 
+    active_datasets = datasets if datasets is not None else DATASETS
+
     def factory(p):
         return strategy_cls(**p)
 
-    for dataset in DATASETS:
+    for dataset in active_datasets:
         df = _load_data(dataset)
         equity_series, gross_equity_series, positions_series, rfr = backtest._run_internal(
-            strategy_cls(**params), df
+            strategy_cls(**params), df, backtest_config
         )
 
         trials_matrix = None
-        if sensitivity is not None and param_grid is not None:
+        if sensitivity is not None and param_grid is not None and dataset in sensitivity:
             n_trials_in_sweep = sensitivity[dataset]["n_trials"]
             if n_trials_in_sweep >= _MIN_TRIALS_FOR_SWEEP:
-                trials_matrix = build_trials_matrix(factory, param_grid, df)
+                trials_matrix = build_trials_matrix(
+                    factory, param_grid, df, engine_kwargs=backtest_config or {}
+                )
             else:
                 returns = equity_series.pct_change().dropna().values
                 trials_matrix = _block_bootstrap_trials(returns)
@@ -124,7 +134,7 @@ def compute_strategy_metrics(strategy_cls, params: dict, strategy_dir: Path = No
                 rs_clean[k] = _round_float(v)
         base["regime_sharpe"] = rs_clean
 
-        wf = backtest.walk_forward_backtest(strategy_cls, params, df)
+        wf = backtest.walk_forward_backtest(strategy_cls, params, df, config=backtest_config)
         base["walk_forward"] = wf
 
         rounded = {k: _round_float(v) if k not in ("walk_forward", "regime_sharpe") else v for k, v in base.items()}
@@ -244,6 +254,46 @@ def main():
     out10 = s10_dir / "metrics.json"
     out10.write_text(json.dumps(metrics10, indent=2) + "\n")
     print(f"Written: {out10}")
+
+    # Strategy 11: Statistical Pairs Mean-Reversion (paired_cointegrated dataset only)
+    # allow_short=True is required: the strategy generates -1 (short spread) signals
+    # that must be executed; without it the strategy degenerates to long-only.
+    s11_dir = STRATEGIES_DIR / "11-pairs-mean-reversion"
+    mod11 = _load_strategy_module(s11_dir, "pairs_strategy")
+    metrics11 = compute_strategy_metrics(
+        mod11.PairsMeanReversion,
+        {"z_entry": 2.0, "z_exit": 0.5, "window": 60},
+        s11_dir,
+        datasets=["paired_cointegrated"],
+        backtest_config={"allow_short": True},
+    )
+    out11 = s11_dir / "metrics.json"
+    out11.write_text(json.dumps(metrics11, indent=2) + "\n")
+    print(f"Written: {out11}")
+
+    # Strategy 12: Volatility-Conditioned RSI Mean-Reversion
+    # allow_short=True is required: the strategy takes short positions when RSI > 90
+    # in high-vol regimes; without it only the long side is evaluated.
+    s12_dir = STRATEGIES_DIR / "12-vol-conditioned-rsi"
+    mod12 = _load_strategy_module(s12_dir, "vol_rsi_strategy")
+    metrics12 = compute_strategy_metrics(
+        mod12.VolConditionedRSI,
+        {
+            "vol_window": 21,
+            "vol_lookback": 252,
+            "vol_threshold": 0.75,
+            "rsi_window": 2,
+            "rsi_entry_long": 10.0,
+            "rsi_exit_long": 70.0,
+            "rsi_entry_short": 90.0,
+            "rsi_exit_short": 30.0,
+        },
+        s12_dir,
+        backtest_config={"allow_short": True},
+    )
+    out12 = s12_dir / "metrics.json"
+    out12.write_text(json.dumps(metrics12, indent=2) + "\n")
+    print(f"Written: {out12}")
 
     print("Done.")
 

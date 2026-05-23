@@ -490,6 +490,67 @@ def parameter_sensitivity_dispersion(sharpe_values: list) -> float:
     return float(np.std(sharpe_values))
 
 
+def ulcer_index(equity: pd.Series) -> float:
+    """Root-mean-square percentage drawdown across all bars (Peter Martin, 1987).
+
+    Blind spot vs. max_drawdown: max_drawdown only captures the single worst
+    episode. A strategy with many 15% drawdowns but a 20% max looks better on
+    max_dd than one with a single 18% drawdown; UI penalizes the chronic
+    drawdowner correctly by squaring each bar's depth and averaging over time.
+
+    Blind spot vs. time_in_drawdown: that metric is binary (in/out) and does
+    not weight by depth. UI multiplies depth × duration implicitly — a deep
+    drawdown that persists contributes quadratically to the RMS.
+
+    Blind spot vs. Sharpe: a flat underwater equity curve (slow bleed) has low
+    daily volatility but catastrophic UI. Sharpe misses it; UI catches it.
+
+    UI is always >= 0. A value of 0 means the equity curve never drew down
+    (monotonically non-decreasing). A value of 10 means the RMS percentage
+    drawdown is 10%.
+
+    Args:
+        equity: Portfolio value series (must be non-empty, all positive).
+
+    Returns:
+        Ulcer Index as a float >= 0 (percentage units, e.g. 10.0 = 10% RMS drawdown).
+    """
+    running_max = equity.cummax()
+    drawdown_pct = (equity - running_max) / running_max * 100
+    return float(np.sqrt((drawdown_pct ** 2).mean()))
+
+
+def martin_ratio(equity: pd.Series, periods_per_year: int = 252) -> float:
+    """Annualized CAGR divided by Ulcer Index — a duration-weighted drawdown ratio.
+
+    Blind spot vs. Calmar (CAGR / max_drawdown): Calmar is easily gamed by a
+    strategy that recovers quickly from the one deepest drawdown but suffers
+    persistently elsewhere. Martin Ratio uses UI, which sees the whole path —
+    both depth and duration of every drawdown episode simultaneously.
+
+    Blind spot vs. Sharpe: volatility-based; misses slow-bleed underwater curves.
+    Martin Ratio uses UI as denominator, directly penalising sustained drawdown.
+
+    Returns NaN when UI == 0 (monotonically rising equity has no drawdown
+    denominator). Use the NaN to flag strategies with pristine equity curves
+    rather than dividing by zero.
+
+    Args:
+        equity: Portfolio value series (must have at least 2 points, all positive).
+        periods_per_year: Trading periods per year for annualisation. Default 252
+            (daily bars). Use 52 for weekly, 12 for monthly.
+
+    Returns:
+        Martin Ratio as a float. NaN when ulcer_index == 0.
+    """
+    ui = ulcer_index(equity)
+    if ui == 0:
+        return float("nan")
+    n = len(equity)
+    annual_return = (equity.iloc[-1] / equity.iloc[0]) ** (periods_per_year / n) - 1
+    return float(annual_return / (ui / 100))
+
+
 def compute_all(
     equity: pd.Series,
     positions: pd.Series,
@@ -519,6 +580,8 @@ def compute_all(
         "calmar": calmar(equity),
         "max_drawdown": max_drawdown(equity),
         "time_in_drawdown": time_in_drawdown(equity),
+        "ulcer_index": ulcer_index(equity),
+        "martin_ratio": martin_ratio(equity),
         "turnover": turnover(positions),
         "hit_rate": hit_rate(equity),
         "tail_ratio": tail_ratio(equity),
